@@ -1,0 +1,17 @@
+name: bearcat
+version: "1.0"
+author: Chritopher G. O'Brian <mobiletread@gmail.com>
+about: Small commandline program to securely sync contents between S3 buckets in AWS. Use cases include syncing content from a commercial environment into AWS GovCloud.
+args:
+  - profile:
+      help: Commercial AWS profile
+      required: false
+      index: 1
+  - config:
+      help: location of the configuration file (defaults to ~/.bearcat)
+      required: false
+      index: 2
+  - verbose:
+      short: v
+      multiple: true
+      help: Sets the level of verbosity
