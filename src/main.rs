@@ -32,6 +32,8 @@ fn main() {
         None => println!("No profile provided. Falling back to using IAM default"),
     }
 
+    // The path, region, etc... will come from environment variables, command line args or can be
+    // parsed out of a config file if that is present.
     let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
     let download_result = download(&client, String::from("path"));
     let upload_result= download(&client, String::from("path"));
