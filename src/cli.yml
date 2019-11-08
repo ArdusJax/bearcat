@@ -3,6 +3,14 @@ version: "1.0"
 author: Chritopher G. O'Brian <mobiletread@gmail.com>
 about: Small commandline program to securely sync contents between S3 buckets in AWS. Use cases include syncing content from a commercial environment into AWS GovCloud.
 args:
+  - region-from:
+      help: AWS region for the bucket that is being sync'd from.
+      required: false
+      index: 1
+  - region-to:
+      help: AWS region for the bucket that is being sync'd to.
+      required: false
+      index: 1
   - profile:
       help: Commercial AWS profile
       required: false
