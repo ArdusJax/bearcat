@@ -1,0 +1,33 @@
+name: Rust-Prod
+
+on: 
+ push:
+  branches:
+    - 'master'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - name: Build
+      run: cargo build --release --verbose
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Test
+      run: cargo test --verbose
+    - name: Build Result Notification
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      uses: pullreminders/slack-action@master
+      with:
+        args: '{\"channel\":\"CQCCX8MA9\",\"text\":\"$GITHUB_REF Build Status: ${{ job.status }}\"}'
+  deploy:
+    if: contains(github.event.pull_request.labels.*.name, 'approved')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Echo Deploy
+      run: echo 'Approved... Deploying to production'
