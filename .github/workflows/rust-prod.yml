@@ -27,7 +27,7 @@ jobs:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       uses: pullreminders/slack-action@master
       with:
-        args: '{\"channel\":\"CQCCX8MA9\",\"text\":\"$GITHUB_REF Build Status: ${{ job.status }}\"}'
+        args: '{\"channel\":\"CQCCX8MA9\",\"text\":\"${{ GITHUB_REF }} Build Status: ${{ job.status }}\"}'
   deploy:
     if: contains(github.event.pull_request.labels.*.name, 'approved')
     runs-on: ubuntu-latest
