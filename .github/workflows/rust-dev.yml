@@ -17,6 +17,9 @@ jobs:
   test: 
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
     - name: Tests
       run: cargo test --verbose
     - name: Development Build Result Notification
@@ -29,5 +32,8 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'reviewed')
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
     - name: Merge
       run: cargo test --verbose
