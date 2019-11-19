@@ -51,5 +51,4 @@ fn main() {
     //let client = rusoto_s3::S3Client::new(region::Region::UsEast1);
     //let download_result = download(&client, "path", sour_bucket);
     //let upload_result= upload(&client, "path", "test.txt", dest_bucket);
-    let res = processes_object("test.txt");
 }
