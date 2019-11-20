@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate clap;
-extern crate rusoto_s3;
 extern crate rusoto_core;
+extern crate rusoto_s3;
 
 mod bucket;
 
+use bucket::{download, upload};
 use clap::{App, ArgMatches};
-use rusoto_s3::{S3Client};
-use rusoto_core::{region};
-use bucket::{upload, download, processes_object};
+use rusoto_core::region;
+use rusoto_s3::S3Client;
 
 // Flow of the application
 // Set the AWS profile for the commercial role with bucket access
