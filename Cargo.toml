@@ -8,5 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = {version = "2.33", features = ["yaml"]}
-rusoto_core = "0.41.0"
-rusoto_s3 = "0.41.0"
+rusoto_credential = "0.42.0"
+rusoto_core = "0.42.0"
+rusoto_sts = "0.42.0"
+rusoto_s3 = "0.42.0"

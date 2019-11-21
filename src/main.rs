@@ -1,9 +1,12 @@
 #[macro_use]
 extern crate clap;
 extern crate rusoto_core;
+extern crate rusoto_credential;
 extern crate rusoto_s3;
+extern crate rusoto_sts;
 
 mod bucket;
+mod credentials;
 
 use bucket::{download, upload};
 use clap::{App, ArgMatches};
@@ -47,8 +50,8 @@ fn main() {
     // The path, region, etc... will come from environment variables, command line args or can be
     // parsed out of a config file if that is present.
     let sour_bucket = "bearcat-commercial";
-    let dest_bucket = "bearcat-commercial";
-    //let client = rusoto_s3::S3Client::new(region::Region::UsEast1);
+    let dest_bucket = "plz-test";
+    let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
     //let download_result = download(&client, "path", sour_bucket);
-    //let upload_result= upload(&client, "path", "test.txt", dest_bucket);
+    let upload_result = upload(&client, "path", "test.txt", dest_bucket);
 }
