@@ -1,39 +1,52 @@
 name: Rust-Dev
 
-on: 
- push:
-  branches:
-    - '!master'
+on:
+  push:
+    branches:
+      - "!master"
 
 jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Setup Audit
+        run: |
+          cargo install --force cargo-audit
+          cargo generate-lockfile
+      - name: Cargo Audit
+        run: cargo audit
   build:
+    needs: audit
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-      with:
-        fetch-depth: 1
-    - name: Build
-      run: cargo build --verbose
-  test: 
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Build
+        run: cargo build --verbose
+  test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-      with:
-        fetch-depth: 1
-    - name: Tests
-      run: cargo test --verbose
-    - name: Development Build Result Notification
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      uses: pullreminders/slack-action@master
-      with:
-        args: '{\"channel\":\"CQCCX8MA9\",\"text\":\"Build Status: ${{ job.status }}\"}'
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Tests
+        run: cargo test --verbose
+      - name: Development Build Result Notification
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: pullreminders/slack-action@master
+        with:
+          args: '{\"channel\":\"CQCCX8MA9\",\"text\":\"Build Status: ${{ job.status }}\"}'
   merge:
     if: contains(github.event.pull_request.labels.*.name, 'reviewed')
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-      with:
-        fetch-depth: 1
-    - name: Merge
-      run: cargo test --verbose
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Merge
+        run: cargo test --verbose

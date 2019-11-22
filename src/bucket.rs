@@ -16,6 +16,32 @@ pub fn download<'a, 'b>(
 ) -> Result<(), ()> {
   let req = GetObjectRequest {
     bucket: String::from(bucket),
+    key: String::from(path),
+    ..Default::default()
+  };
+  let res = client.get_object(req).sync();
+  //todo: This will be moved out later
+  match res {
+    Err(e) => {
+      panic!(format!(
+        "Unable to get the objects from the bucket\nError:\n{:?}",
+        e
+      ));
+    }
+    Ok(result) => println!("Downloaded object:\n{:?}", result),
+  }
+  Ok(())
+}
+
+// Download contents to an S3 bucket
+// Todo: Add actual type safe results
+pub fn download_all<'a, 'b>(
+  client: &rusoto_s3::S3Client,
+  path: &'a str,
+  bucket: &'b str,
+) -> Result<(), ()> {
+  let req = GetObjectRequest {
+    bucket: String::from(bucket),
     ..Default::default()
   };
   let res = client.get_object(req);
@@ -73,6 +99,14 @@ pub fn upload<'a, 'b, 'c>(
     ..Default::default()
   };
 
+  println!("bucket: {:?}", bucket.to_owned());
+  println!("filename: {:?}", filename.to_owned());
+  let result = client.complete_multipart_upload(complete_req).sync();
+  match result {
+    Err(e) => println!("Could not complete the multipart upload.\n{:?}", e),
+    Ok(result) => println!("Result: \n{:?}", result),
+  }
+
   Ok(())
 }
 
@@ -85,9 +119,9 @@ fn processes_object(
 ) -> Result<Vec<UploadPartRequest>, std::io::Error> {
   // Get the file ready for processing
   let file = File::open(path)?;
-  let mut reader = BufReader::with_capacity(10, file);
+  let mut reader = BufReader::with_capacity(5242880, file);
   // Get all of the parameters for the upload parts initialized
-  let mut index = 0;
+  let mut index = 1;
   let mut upload_requests = Vec::new();
   // Anonymous function for creating the UploadPartRequest
   let create_upload_part = |body: Vec<u8>, part_number: i64| -> UploadPartRequest {
@@ -102,9 +136,8 @@ fn processes_object(
   };
   // Start parsing the file and creating the parts, collecting them in a vector
   while !reader.fill_buf()?.is_empty() {
-    println!("{:?}", reader.buffer());
     upload_requests.push(create_upload_part(reader.buffer().to_vec(), index));
-    reader.consume(10);
+    reader.consume(5242880);
     index = index + 1;
   }
   // If there are no errors return the vec of UploadPartRequest

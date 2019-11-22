@@ -49,9 +49,14 @@ fn main() {
 
     // The path, region, etc... will come from environment variables, command line args or can be
     // parsed out of a config file if that is present.
-    let sour_bucket = "bearcat-commercial";
+    let sour_bucket = "plz-da-default";
     let dest_bucket = "plz-test";
+    let file_name = "mi6-master.zip";
     let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
-    //let download_result = download(&client, "path", sour_bucket);
-    let upload_result = upload(&client, "path", "test.txt", dest_bucket);
+    println!("Starting the download...");
+    let download_result = download(&client, file_name, sour_bucket);
+    println!("Finished the download!");
+    println!("Starting the upload...");
+    let upload_result = upload(&client, "path", file_name, dest_bucket);
+    println!("Finished the upload!");
 }
