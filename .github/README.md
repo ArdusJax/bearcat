@@ -1,6 +1,6 @@
 # Bearcat Bucket Sync
 
-![](https://github.com/ArdusJax/bearcat/workflows/Rust-Prod/badge.svg) ![](https://github.com/ArdusJax/bearcat/workflows/Rust-Dev/badge.svg)
+![](https://github.com/ArdusJax/bearcat/workflows/Production/badge.svg) ![](https://github.com/ArdusJax/bearcat/workflows/Development/badge.svg) ![](https://github.com/ArdusJax/bearcat/workflows/Cargo%20Security%20Audit/badge.svg)
 
 ## Overview
 
