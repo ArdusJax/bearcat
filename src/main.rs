@@ -20,8 +20,8 @@ use rusoto_s3::S3Client;
 // Upload was downloaded from the commercial bucket into the GovCloud bucket
 fn main() {
     let yaml = load_yaml!("cli.yml");
-    let app = App::from_yaml(yaml).version("0.1.0");
-    let matches = app.get_matches().clone();
+    let app = App::from(yaml).version("0.1.0");
+    let matches = app.get_matches();
     let profile = matches.value_of("profile");
     let source_bucket = matches.value_of("source");
     let destination_bucket = matches.value_of("destination");
