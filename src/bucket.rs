@@ -7,19 +7,29 @@ use rusoto_s3::{
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use futures::prelude::*;
 
 // Download contents to an S3 bucket
 pub fn download<'a, 'b>(
     client: &rusoto_s3::S3Client,
     path: &'a str,
     bucket: &'b str,
-) -> Result<GetObjectOutput, rusoto_core::RusotoError<GetObjectError>> {
+) -> Result<(), ()> {
     let req = GetObjectRequest {
         bucket: String::from(bucket),
         key: String::from(path),
         ..Default::default()
     };
-    client.get_object(req).sync()
+    let res = client
+        .get_object(req)
+        .sync()
+        .expect("error getting the object");
+    let stream = res.body.unwrap();
+    let body = stream.concat2().wait().unwrap();
+    let mut file = File::create(&path).expect("failed to create file for download");
+    file.write_all(&body)
+        .expect("failed to write body to the file");
+    Ok(())
 }
 
 // Download contents to an S3 bucket

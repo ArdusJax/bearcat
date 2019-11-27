@@ -4,6 +4,7 @@ extern crate rusoto_core;
 extern crate rusoto_credential;
 extern crate rusoto_s3;
 extern crate rusoto_sts;
+extern crate futures;
 
 mod bucket;
 mod credentials;
