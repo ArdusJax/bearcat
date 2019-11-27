@@ -54,6 +54,22 @@ fn main() {
     let dest_bucket = "plz-test";
     let file_name = "mi6-master.zip";
     let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
+    // Download the artifact from the source S3 bucket
     let download_result = download(&client, file_name, sour_bucket);
+    match download_result {
+        Ok(res) => println!(
+            "Download of {:?} completed successfully!\n{:?}",
+            file_name, res
+        ),
+        Err(e) => panic!(format!(
+            "Download of {:?} failed with error:\n{:?}",
+            file_name, e
+        )),
+    }
+    // Upload the artifact from the local machine to the destination bucket
     let upload_result = upload(&client, "path", file_name, dest_bucket);
+    match upload_result {
+        Ok(res) => println!("Upload was successful!\n{:?}", res),
+        Err(e) => panic!(format!("Could not upload artifact...\nError:\n{:?}", e)),
+    }
 }
