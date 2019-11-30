@@ -164,7 +164,7 @@ mod tests {
         assert_eq!(part.content_length, None);
         assert_eq!(part.part_number, 1);
         assert_eq!(part.upload_id, "34");
-        assert_eq!(part.key, "test.txt");
+        assert_eq!(part.key, "resources/test.txt");
         assert_eq!(part.body.is_some(), true);
     }
 }
