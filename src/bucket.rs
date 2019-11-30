@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn create_upload_part_test() {
-        let part = create_upload_part("bearcat-test", "test.txt", "34", vec![1, 2, 3], 1);
+        let part = create_upload_part("bearcat-test", "resources/test.txt", "34", vec![1, 2, 3], 1);
         assert_eq!(part.bucket, "bearcat-test");
         assert_eq!(part.content_length, None);
         assert_eq!(part.part_number, 1);
