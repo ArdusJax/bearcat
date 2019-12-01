@@ -50,12 +50,15 @@ fn main() {
 
     // The path, region, etc... will come from environment variables, command line args or can be
     // parsed out of a config file if that is present.
-    let sour_bucket = "plz-da-default";
-    let dest_bucket = "plz-test";
-    let file_name = "mi6-master.zip";
+    //let sour_bucket = "plz-da-default";
+    //let dest_bucket = "plz-test";
     let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
+    // Check to see if there are any objects in the bucket with a head request
+    // If there are objects in the bucket then get all of the objects and
+    // sync them over to the destination bucket
+    let file_name = "mi6-master.zip";
     // Download the artifact from the source S3 bucket
-    let download_result = download(&client, file_name, sour_bucket);
+    let download_result = download(&client, file_name, source_bucket.unwrap());
     match download_result {
         Ok(res) => println!(
             "Download of {:?} completed successfully!\n{:?}",
@@ -67,7 +70,7 @@ fn main() {
         )),
     }
     // Upload the artifact from the local machine to the destination bucket
-    let upload_result = upload(&client, "path", file_name, dest_bucket);
+    let upload_result = upload(&client, "path", file_name, destination_bucket.unwrap());
     match upload_result {
         Ok(res) => println!("Upload was successful!\n{:?}", res),
         Err(e) => panic!(format!("Could not upload artifact...\nError:\n{:?}", e)),

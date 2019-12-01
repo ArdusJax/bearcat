@@ -2,7 +2,7 @@ use crate::rusoto_s3::S3;
 use rusoto_s3::{
     CompleteMultipartUploadRequest, CompletedMultipartUpload, CompletedPart,
     CreateMultipartUploadRequest, GetObjectRequest, UploadPartRequest, GetObjectOutput,
-    GetObjectError,
+    GetObjectError, ListObjectsV2Request, ListObjectsV2Error, ListObjectsV2Output,
 };
 use std::fs::File;
 use std::io::prelude::*;
@@ -150,6 +150,17 @@ fn create_upload_part(
         upload_id: upload_id.to_owned(),
         part_number,
         ..Default::default()
+    }
+}
+
+fn get_bucket_objects(client: &rusoto_s3::S3Client, bucket_name: &str) {
+    let req = ListObjectsV2Request {
+        bucket: bucket_name.to_owned(),
+        ..Default::default()
+    };
+    match client.list_objects_v2(req).sync() {
+        Ok(result) => println!("Bucket objects:\n{:?}", result),
+        Err(e) => println!("Error: \n{:?}", e),
     }
 }
 
