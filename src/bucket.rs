@@ -2,7 +2,8 @@ use crate::rusoto_s3::S3;
 use rusoto_s3::{
     CompleteMultipartUploadRequest, CompletedMultipartUpload, CompletedPart,
     CreateMultipartUploadRequest, GetObjectRequest, UploadPartRequest, GetObjectOutput,
-    GetObjectError, ListObjectsV2Request, ListObjectsV2Error, ListObjectsV2Output,
+    GetObjectError, HeadBucketRequest, ListObjectsV2Request, ListObjectsV2Error,
+    ListObjectsV2Output,
 };
 use std::fs::File;
 use std::io::prelude::*;
@@ -152,8 +153,20 @@ fn create_upload_part(
         ..Default::default()
     }
 }
+pub fn check_bucket_access(client: &rusoto_s3::S3Client, bucket_name: &str) -> bool {
+    let req = HeadBucketRequest {
+        bucket: bucket_name.to_owned(),
+    };
+    match client.head_bucket(req).sync() {
+        Ok(_) => true,
+        Err(e) => {
+            println!("error accessing the bucket: {:?}\n{:?}", bucket_name, e);
+            false
+        }
+    }
+}
 
-fn get_bucket_objects(client: &rusoto_s3::S3Client, bucket_name: &str) {
+pub fn get_bucket_objects(client: &rusoto_s3::S3Client, bucket_name: &str) -> Result<(), ()> {
     let req = ListObjectsV2Request {
         bucket: bucket_name.to_owned(),
         ..Default::default()
@@ -162,6 +175,7 @@ fn get_bucket_objects(client: &rusoto_s3::S3Client, bucket_name: &str) {
         Ok(result) => println!("Bucket objects:\n{:?}", result),
         Err(e) => println!("Error: \n{:?}", e),
     }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -9,7 +9,7 @@ extern crate futures;
 mod bucket;
 mod credentials;
 
-use bucket::{download, upload};
+use bucket::{download, upload, get_bucket_objects};
 use clap::{App, ArgMatches};
 use rusoto_core::region;
 use rusoto_s3::S3Client;
@@ -52,27 +52,31 @@ fn main() {
     // parsed out of a config file if that is present.
     //let sour_bucket = "plz-da-default";
     //let dest_bucket = "plz-test";
-    let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
-    // Check to see if there are any objects in the bucket with a head request
+    let client = rusoto_s3::S3Client::new(region::Region::UsEast1);
+    // Check to see if there are any objects in the bucket
+    let bucket_objects = get_bucket_objects(&client, source_bucket.unwrap());
     // If there are objects in the bucket then get all of the objects and
     // sync them over to the destination bucket
-    let file_name = "mi6-master.zip";
-    // Download the artifact from the source S3 bucket
-    let download_result = download(&client, file_name, source_bucket.unwrap());
-    match download_result {
-        Ok(res) => println!(
-            "Download of {:?} completed successfully!\n{:?}",
-            file_name, res
-        ),
-        Err(e) => panic!(format!(
-            "Download of {:?} failed with error:\n{:?}",
-            file_name, e
-        )),
-    }
-    // Upload the artifact from the local machine to the destination bucket
-    let upload_result = upload(&client, "path", file_name, destination_bucket.unwrap());
-    match upload_result {
-        Ok(res) => println!("Upload was successful!\n{:?}", res),
-        Err(e) => panic!(format!("Could not upload artifact...\nError:\n{:?}", e)),
+    let sync = false;
+    if sync {
+        let file_name = "go1.12.5.linux-amd64.tar.gz";
+        // Download the artifact from the source S3 bucket
+        let download_result = download(&client, file_name, source_bucket.unwrap());
+        match download_result {
+            Ok(res) => println!(
+                "Download of {:?} completed successfully!\n{:?}",
+                file_name, res
+            ),
+            Err(e) => panic!(format!(
+                "Download of {:?} failed with error:\n{:?}",
+                file_name, e
+            )),
+        }
+        // Upload the artifact from the local machine to the destination bucket
+        let upload_result = upload(&client, "path", file_name, destination_bucket.unwrap());
+        match upload_result {
+            Ok(res) => println!("Upload was successful!\n{:?}", res),
+            Err(e) => panic!(format!("Could not upload artifact...\nError:\n{:?}", e)),
+        }
     }
 }
