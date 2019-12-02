@@ -16,35 +16,23 @@ pub fn download<'a, 'b>(
     path: &'a str,
     bucket: &'b str,
 ) -> Result<(), ()> {
-    let req = GetObjectRequest {
-        bucket: String::from(bucket),
-        key: String::from(path),
-        ..Default::default()
-    };
-    let res = client
-        .get_object(req)
-        .sync()
-        .expect("error getting the object");
-    let stream = res.body.unwrap();
-    let body = stream.concat2().wait().unwrap();
-    let mut file = File::create(&path).expect("failed to create file for download");
-    file.write_all(&body)
-        .expect("failed to write body to the file");
-    Ok(())
-}
-
-// Download contents to an S3 bucket
-// Todo: Add actual type safe results
-pub fn download_all<'a, 'b>(
-    client: &rusoto_s3::S3Client,
-    path: &'a str,
-    bucket: &'b str,
-) -> Result<(), ()> {
-    let req = GetObjectRequest {
-        bucket: String::from(bucket),
-        ..Default::default()
-    };
-    let res = client.get_object(req);
+    // Always check if the permissions are correct
+    if check_bucket_access(client, bucket) {
+        let req = GetObjectRequest {
+            bucket: String::from(bucket),
+            key: String::from(path),
+            ..Default::default()
+        };
+        let res = client
+            .get_object(req)
+            .sync()
+            .expect("error getting the object");
+        let stream = res.body.unwrap();
+        let body = stream.concat2().wait().unwrap();
+        let mut file = File::create(&path).expect("failed to create file for download");
+        file.write_all(&body)
+            .expect("failed to write body to the file");
+    }
     Ok(())
 }
 
@@ -56,53 +44,56 @@ pub fn upload<'a, 'b, 'c>(
     filename: &'b str,
     bucket: &'c str,
 ) -> Result<(), std::io::Error> {
-    // Create the request for a multiport upload to the S3 bucket
-    let req = CreateMultipartUploadRequest {
-        bucket: bucket.to_owned(),
-        key: filename.to_owned(),
-        ..Default::default()
-    };
+    // Always check if the permissions are correct
+    if check_bucket_access(client, bucket) {
+        // Create the request for a multiport upload to the S3 bucket
+        let req = CreateMultipartUploadRequest {
+            bucket: bucket.to_owned(),
+            key: filename.to_owned(),
+            ..Default::default()
+        };
 
-    // Make the request and log the result
-    let res = client
-        .create_multipart_upload(req)
-        .sync()
-        .expect("Could not create multipart upload.");
-    println!("{:#?}", res);
-    // Get the upload id from the resposne
-    let upload_id = res.upload_id.unwrap();
-    // Create all of the parts for uploading
-    let parts = processes_object(filename, bucket, filename, &upload_id)?;
-    let mut completed_parts = Vec::new();
-    for part in parts {
-        let part_num = part.part_number;
-        let response = client
-            .upload_part(part)
+        // Make the request and log the result
+        let res = client
+            .create_multipart_upload(req)
             .sync()
-            .expect("Failed to upload part");
-        // Collect the completed  parts for finalizing later
-        completed_parts.push(CompletedPart {
-            e_tag: response.e_tag.clone(),
-            part_number: Some(part_num),
-        });
-    }
-    // Create the completed multipart upload with the added e-tags
-    let completed_upload = CompletedMultipartUpload {
-        parts: Some(completed_parts),
-    };
+            .expect("Could not create multipart upload.");
+        println!("{:#?}", res);
+        // Get the upload id from the resposne
+        let upload_id = res.upload_id.unwrap();
+        // Create all of the parts for uploading
+        let parts = processes_object(filename, bucket, filename, &upload_id)?;
+        let mut completed_parts = Vec::new();
+        for part in parts {
+            let part_num = part.part_number;
+            let response = client
+                .upload_part(part)
+                .sync()
+                .expect("Failed to upload part");
+            // Collect the completed  parts for finalizing later
+            completed_parts.push(CompletedPart {
+                e_tag: response.e_tag.clone(),
+                part_number: Some(part_num),
+            });
+        }
+        // Create the completed multipart upload with the added e-tags
+        let completed_upload = CompletedMultipartUpload {
+            parts: Some(completed_parts),
+        };
 
-    let complete_req = CompleteMultipartUploadRequest {
-        bucket: bucket.to_owned(),
-        key: filename.to_owned(),
-        upload_id: upload_id.to_owned(),
-        multipart_upload: Some(completed_upload),
-        ..Default::default()
-    };
+        let complete_req = CompleteMultipartUploadRequest {
+            bucket: bucket.to_owned(),
+            key: filename.to_owned(),
+            upload_id: upload_id.to_owned(),
+            multipart_upload: Some(completed_upload),
+            ..Default::default()
+        };
 
-    let result = client.complete_multipart_upload(complete_req).sync();
-    match result {
-        Err(e) => println!("Could not complete the multipart upload.\n{:?}", e),
-        Ok(result) => println!("Result: \n{:?}", result),
+        let result = client.complete_multipart_upload(complete_req).sync();
+        match result {
+            Err(e) => println!("Could not complete the multipart upload.\n{:?}", e),
+            Ok(result) => println!("Result: \n{:?}", result),
+        }
     }
 
     Ok(())
@@ -153,7 +144,7 @@ fn create_upload_part(
         ..Default::default()
     }
 }
-pub fn check_bucket_access(client: &rusoto_s3::S3Client, bucket_name: &str) -> bool {
+fn check_bucket_access(client: &rusoto_s3::S3Client, bucket_name: &str) -> bool {
     let req = HeadBucketRequest {
         bucket: bucket_name.to_owned(),
     };
@@ -166,16 +157,33 @@ pub fn check_bucket_access(client: &rusoto_s3::S3Client, bucket_name: &str) -> b
     }
 }
 
-pub fn get_bucket_objects(client: &rusoto_s3::S3Client, bucket_name: &str) -> Result<(), ()> {
+pub fn get_bucket_object_keys(
+    client: &rusoto_s3::S3Client,
+    bucket_name: &str,
+) -> Result<Vec<String>, ()> {
     let req = ListObjectsV2Request {
         bucket: bucket_name.to_owned(),
         ..Default::default()
     };
     match client.list_objects_v2(req).sync() {
-        Ok(result) => println!("Bucket objects:\n{:?}", result),
-        Err(e) => println!("Error: \n{:?}", e),
+        Ok(result) => {
+            let mut key_list: Vec<String> = Vec::new();
+            match result.contents {
+                Some(objects) => {
+                    for object in objects {
+                        key_list.push(object.key.unwrap());
+                    }
+                    Ok(key_list)
+                }
+                None => Err(()),
+            }
+        }
+        Err(e) => {
+            // Only want to log the error
+            println!("Error: \n{:?}", e);
+            Err(())
+        }
     }
-    Ok(())
 }
 
 #[cfg(test)]
