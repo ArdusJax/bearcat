@@ -5,6 +5,7 @@ extern crate rusoto_credential;
 extern crate rusoto_s3;
 extern crate rusoto_sts;
 extern crate futures;
+extern crate bytes;
 
 mod bucket;
 mod credentials;
@@ -26,6 +27,7 @@ fn main() {
     let profile = matches.value_of("profile");
     let source_bucket = matches.value_of("source");
     let destination_bucket = matches.value_of("destination");
+    let region = matches.value_of("region");
 
     if let Some(config) = matches.value_of("config") {
         println!("Using the config file: {}", config)
@@ -50,7 +52,7 @@ fn main() {
 
     // The path, region, etc... will come from environment variables, command line args or can be
     // parsed out of a config file if that is present.
-    let client = rusoto_s3::S3Client::new(region::Region::UsEast1);
+    let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
     // If there are objects in the bucket then get all of the objects and
     // sync them over to the destination bucket
     if let Ok(file_names) = get_bucket_object_keys(&client, source_bucket.unwrap()) {

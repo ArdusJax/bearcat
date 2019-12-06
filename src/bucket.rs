@@ -6,9 +6,12 @@ use rusoto_s3::{
     ListObjectsV2Output,
 };
 use std::fs::File;
+use std::fs;
 use std::io::prelude::*;
 use std::io::BufReader;
 use futures::prelude::*;
+use std::path::Path;
+use bytes::Bytes;
 
 // Download contents to an S3 bucket
 pub fn download<'a, 'b>(
@@ -29,9 +32,12 @@ pub fn download<'a, 'b>(
             .expect("error getting the object");
         let stream = res.body.unwrap();
         let body = stream.concat2().wait().unwrap();
-        let mut file = File::create(&path).expect("failed to create file for download");
-        file.write_all(&body)
-            .expect("failed to write body to the file");
+        match create_download_file(&body, path, "data") {
+            Ok(()) => (),
+            Err(e) => {
+                panic!("unable to create files or directories");
+            }
+        }
     }
     Ok(())
 }
@@ -99,7 +105,7 @@ pub fn upload<'a, 'b, 'c>(
     Ok(())
 }
 
-// Processses the file and return a vec of UploadPartRequest
+// Processes the file and return a vec of UploadPartRequest
 fn processes_object(
     path: &str,
     bucket: &str,
@@ -171,8 +177,12 @@ pub fn get_bucket_object_keys(
             match result.contents {
                 Some(objects) => {
                     for object in objects {
-                        key_list.push(object.key.unwrap());
+                        // if the object is isn't None unwrap and add to the list
+                        if let Some(e) = &object.key {
+                            key_list.push(e.to_string());
+                        }
                     }
+                    println!("Key List:\n{:?}", &key_list);
                     Ok(key_list)
                 }
                 None => Err(()),
@@ -185,10 +195,67 @@ pub fn get_bucket_object_keys(
         }
     }
 }
+fn create_download_file(content: &bytes::Bytes, key: &str, base: &str) -> std::io::Result<()> {
+    let object = format!("{}/{}", base, key).to_string();
+    let object_path = Path::new(&object);
+    if !object_path.exists() {
+        // Create a directory for the object
+        // Panics if you can't create the directory
+        let mut create_path = object_path.to_str().unwrap();
+        if !create_path.ends_with('/') {
+            create_path = object_path.parent().unwrap().to_str().unwrap();
+        }
+        fs::create_dir_all(create_path).expect(
+            format!(
+                "failed to create directory {:?} for download",
+                &object_path.as_os_str()
+            )
+            .as_str(),
+        );
+        if !Path::new(object_path).is_dir() {
+            let mut file =
+                File::create(&object_path).expect("unable to write the file for download");
+            file.write_all(&content)
+                .expect("failed to write body to the file");
+        }
+    }
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bytes;
+
+    const FILE_CONTENT: &str = "I prematurely shot my wad on what was supposed to be a dry run..";
+    static TEST_DIR: &str = "file_tests";
+    const FILE_OBJECTS: [&'static str; 7] = [
+        "file_test",
+        "$sec)",
+        "",
+        "shared",
+        "se90",
+        "fake_file/bremerton",
+        "fake_file/another_deep/anderson",
+    ];
+    const FILE_OBJECTS_ABNORMAL: [&'static str; 7] = [
+        "fil42$est",
+        "$sec)",
+        "",
+        "c321",
+        "se90__",
+        "d!(&$^#",
+        "$$__",
+    ];
+    const FILE_OBJECTS_DIRECTORIES: [&'static str; 7] = [
+        "flin/",
+        "sampl3/",
+        "suds/",
+        "sample/nested/",
+        "sample/nested/another_nest/",
+        "flack/",
+        "Simple/Nested/",
+    ];
 
     #[test]
     fn create_upload_part_test() {
@@ -199,5 +266,38 @@ mod tests {
         assert_eq!(part.upload_id, "34");
         assert_eq!(part.key, "resources/test.txt");
         assert_eq!(part.body.is_some(), true);
+    }
+
+    #[test]
+    fn create_file_normal_names_test() {
+        let _file = bytes::Bytes::from(FILE_CONTENT);
+        for (_, _object) in FILE_OBJECTS.iter().enumerate() {
+            let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
+            let res = create_download_file(&_file, _object, TEST_DIR);
+            assert_eq!(res.unwrap(), ());
+            assert_eq!(Path::new(&_file_path).exists(), true);
+        }
+    }
+    #[test]
+    fn create_file_abnormal_names_test() {
+        let _file = bytes::Bytes::from(FILE_CONTENT);
+
+        for (_, _object) in FILE_OBJECTS_ABNORMAL.iter().enumerate() {
+            let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
+            let res = create_download_file(&_file, _object, TEST_DIR);
+            assert_eq!(res.unwrap(), ());
+            assert_eq!(Path::new(&_file_path).exists(), true);
+        }
+    }
+    #[test]
+    fn create_object_dir_test() {
+        let _file = bytes::Bytes::from(FILE_CONTENT);
+
+        for (_, _object) in FILE_OBJECTS_DIRECTORIES.iter().enumerate() {
+            let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
+            let res = create_download_file(&_file, _object, TEST_DIR);
+            assert_eq!(res.unwrap(), ());
+            assert_eq!(Path::new(&_file_path).exists(), true);
+        }
     }
 }
