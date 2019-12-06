@@ -12,9 +12,9 @@ mod credentials;
 
 use bucket::{download, upload, get_bucket_object_keys};
 use clap::{App, ArgMatches};
-use rusoto_core::region;
+use rusoto_core::region::Region;
 use rusoto_s3::S3Client;
-
+use std::str::FromStr;
 // Flow of the application
 // Set the AWS profile for the commercial role with bucket access
 // Download the contents of the commercial bucket
@@ -27,7 +27,10 @@ fn main() {
     let profile = matches.value_of("profile");
     let source_bucket = matches.value_of("source");
     let destination_bucket = matches.value_of("destination");
-    let region = matches.value_of("region");
+    let source_region = matches.value_of("source_region").unwrap_or("us-west-2");
+    let destination_region = matches
+        .value_of("destination_region")
+        .unwrap_or("us-west-2");
 
     if let Some(config) = matches.value_of("config") {
         println!("Using the config file: {}", config)
@@ -52,7 +55,7 @@ fn main() {
 
     // The path, region, etc... will come from environment variables, command line args or can be
     // parsed out of a config file if that is present.
-    let client = rusoto_s3::S3Client::new(region::Region::UsWest2);
+    let client = rusoto_s3::S3Client::new(Region::from_str(&source_region).unwrap());
     // If there are objects in the bucket then get all of the objects and
     // sync them over to the destination bucket
     if let Ok(file_names) = get_bucket_object_keys(&client, source_bucket.unwrap()) {
