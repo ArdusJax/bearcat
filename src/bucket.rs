@@ -68,7 +68,7 @@ pub fn upload<'a, 'b, 'c>(
         // Get the upload id from the resposne
         let upload_id = res.upload_id.unwrap();
         // Create all of the parts for uploading
-        let parts = processes_object(filename, bucket, filename, &upload_id)?;
+        let parts = processes_object(path, bucket, filename, &upload_id)?;
         let mut completed_parts = Vec::new();
         for part in parts {
             let part_num = part.part_number;
@@ -113,7 +113,7 @@ fn processes_object(
     upload_id: &str,
 ) -> Result<Vec<UploadPartRequest>, std::io::Error> {
     // Get the file ready for processing
-    let file = File::open(path)?;
+    let file = File::open(format!("{}/{}", path, filename))?;
     let mut reader = BufReader::with_capacity(5242880, file);
     // Get all of the parameters for the upload parts initialized
     let mut index = 1;
@@ -179,7 +179,9 @@ pub fn get_bucket_object_keys(
                     for object in objects {
                         // if the object is isn't None unwrap and add to the list
                         if let Some(e) = &object.key {
-                            key_list.push(e.to_string());
+                            if !e.ends_with('/') {
+                                key_list.push(e.to_string());
+                            }
                         }
                     }
                     println!("Key List:\n{:?}", &key_list);

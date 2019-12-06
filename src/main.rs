@@ -70,7 +70,7 @@ fn main() {
                 )),
             }
             // Upload the artifact from the local machine to the destination bucket
-            let upload_result = upload(&client, "path", &file_name, destination_bucket.unwrap());
+            let upload_result = upload(&client, "data", &file_name, destination_bucket.unwrap());
             match upload_result {
                 Ok(res) => println!("Upload was successful!\n{:?}", res),
                 Err(e) => panic!(format!("Could not upload artifact...\nError:\n{:?}", e)),
