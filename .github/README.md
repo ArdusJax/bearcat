@@ -4,7 +4,7 @@
 
 ## Overview
 
-Application that uses locked down IAM users to securely sync AWS bucket content between AWS buckets. This is extremely valuable for syncing content between the commercial and restricted accounts in AWS.
+Application that should use locked down IAM users to securely sync AWS bucket content between AWS buckets. This is extremely valuable for syncing content between the commercial and restricted accounts in AWS.
 
 ### Restricted Account Examples
 
@@ -37,10 +37,23 @@ OPTIONS:
 
 ### Script
 
+The installation uses a cloud formation template to create an ec2 instance with the `bearcat` configured to sync between the buckets provided.
+
 * Clone the repository
 * Run the `setup.sh` located in the `resources` directory
 
-The installation uses a cloud formation template to create an ec2 instance with the `bearcat` configured to sync between the buckets provided.
+### Manual EC2
+
+If the cloud formation standup doesn't work for you in some way, you can download the binary on an ec2 instance and configure it as a service. This option sets up the binary as a linux service that is invoked on a schedule via a cron job.
+
+* Create an ec2 instance with S3 access to both accounts
+* Clone the `bearcat` project and build the binary
+* Copy the binary to the `/usr/bin` directory on your ec2 instance
+* Copy the service `bearcat.service` file from the resources directory to the `"/etc/systemd/system/bearcat.service"` directory on your ec2 instance
+* Replace the values for the `source_bucket`, `destination_bucket`, `source_aws_region`, `destination_aws_region`
+* Change the mode to `700`
+* Change the owner to a restricted user on the ec2 instance
+* After the binary and the service file are in place enable the service using `systemctl enable bearcat`
 
 ## Architecture
 
