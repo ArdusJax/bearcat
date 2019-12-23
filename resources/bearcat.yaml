@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS CloudFormation Template for deploying the Bearcat Bucket Sync tool
+Parameters:
+  SourceBucketName:
+    Description: Name of the bucket to be sync'd from. (Usually the commercial acct bucket)
+    Type: String
+  DestinationBucketName:
+    Description: Name of the bucket to be sync'd from. (Usually the commercial acct bucket)
+    Type: String
+  KeyName:
+    Description: Keyname
+    Type: String
+  SourceAWSRegion:
+    Description: Region where the source bucket is located
+    Type: String
+  DestinationAWSRegion:
+    Description: Region where the destination bucket is located
+    Type: String
+
+Resources:
+  BearcatBucketSync:
+    Type: AWS::EC2::Instance
+    Metadata:
+      Comment: Install the bearcat application
+      AWS::CloudFormation::Init:
+        config:
+          sources:
+            "/usr/bin": "https://github.com/ardusjax/bearcat/tarball/master" # Right now this get's the source, but it will install the binary
+          files:
+            "/etc/cfn/cfn-hup.conf":
+              content: |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+              mode: "000400"
+              owner: "root"
+              group: "root"
+            "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
+              content: fn::Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.BearcatBucketSync.Metadata.AWS::CloudFormation::Init
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource BearcatBucketSync --region ${AWS::Region}
+              mode: "000400"
+              owner: "root"
+              group: "root"
+            "/etc/systemd/system/bearcat.service":
+              content: |
+                [Unit]
+                Description=bearcat S3 bucket sync service
+                After=network.target
+                StartLimitIntervalSec=0
+
+                [Service]
+                Type=simple
+                Restart=always
+                RestartSec=3
+                User=ec2-user
+                ExecStart=/usr/bin/bearcat 
+
+                [Install]
+                WantedBy=multi-user.target
+              mode: "000700"
+              owner: "root"
+              group: "root"
+          commands:
+            enable_bearcat:
+              command: "systemctl enable bearcat"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+    Properties:
+      ImageId: ami-00068cd7555f543d5 # Amazon Linux 2 AMI
+      KeyName:
+        Ref: KeyName
+      InstanceType: t2.micro
+      UserData:
+        Fn::Base64: fn::Sub | \#!/bin/bash -xe
+          yum update -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -s ${AWS::StackId} -r BearcatBucketSync --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
+          /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource BearcatBucketSync --region ${AWS::Region}
+
+Outputs:
+  InstanceId:
+    Description: The instance ID of the bearcat bucket sync tool
+    Value:
+      Ref: "BearcatBucketSync"
