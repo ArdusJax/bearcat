@@ -5,12 +5,13 @@ enum Provider {
     AWS_STS,
 }
 
-fn new_provider(provider_type: Provider) {
-    let sts = StsClient::new(Region::UsWest2);
+// Assume the role used for syncing a bucket on the commercial side
+fn new_provider(provider_type: Provider, role_arn: &str, profile: &str, region: Region) {
+    let sts = StsClient::new(region);
     let provider = StsAssumeRoleSessionCredentialsProvider::new(
         sts,
-        "arn:aws:iam::something:role/something".to_owned(),
-        "default".to_owned(),
+        role_arn.to_owned(),
+        profile.to_owned(),
         None,
         None,
         None,

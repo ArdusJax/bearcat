@@ -1,0 +1,14 @@
+[Unit]
+Description=bearcat S3 bucket sync service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+User=ec2-user
+ExecStart=/usr/bin/bearcat <source_bucket> <destination_bucket> <source_aws_region> <destination_aws_region>
+
+[Install]
+WantedBy=multi-user.target
