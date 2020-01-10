@@ -8,32 +8,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    needs: [test, audit]
     steps:
       - uses: actions/checkout@v1
         with:
           fetch-depth: 1
       - name: Build
         run: cargo build --release --verbose
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: 1
-      - name: Test
-        run: cargo test --verbose
-      - name: Build Result Notification
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: pullreminders/slack-action@master
-        with:
-          args: '{\"channel\":\"CQCCX8MA9\",\"text\":\"${{ job.env.GITHUB_REF }} Build Status: ${{ job.status }}\"}'
-  deploy:
-    if: contains(github.event.pull_request.labels.*.name, 'approved')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: 1
-      - name: Echo Deploy
-        run: echo 'Approved... Deploying to production'
+      - name: Upload binaries to release
+            uses: svenstaro/upload-release-action@v1-release
+            with:
+              repo_token: ${{ secrets.GITHUB_TOKEN }}
+              file: target/release/bearcat
+              asset_name: bearcat
+              tag: ${{ github.ref }}
+              overwrite: true
