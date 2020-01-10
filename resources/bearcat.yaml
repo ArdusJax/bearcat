@@ -11,21 +11,74 @@ Parameters:
     Description: Keyname
     Type: String
   SourceAWSRegion:
+    Default: us-west-2
     Description: Region where the source bucket is located
     Type: String
   DestinationAWSRegion:
+    Default: us-west-2
     Description: Region where the destination bucket is located
     Type: String
+  BearcatSourceBucketName:
+    Type: String
+    Description: >-
+      The Name of the S3 Bucket tied to the environment must be lowercase only
+      dashes and alphanumeric supported
+  SourceAccountId:
+    Type: Number
+    Description: Account ID allowed access to this bucket.  Should be a Deploy account.
 
 Resources:
-  BearcatBucketSync:
+  BearcatSourceBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref BearcatSourceBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - AbortIncompleteMultipartUpload:
+              DaysAfterInitiation : 1
+            Status: Enabled
+          - NoncurrentVersionExpirationInDays: 30
+            Status: Enabled
+  BearcatSourceBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref BearcatSourceBucketName
+      PolicyDocument:
+        Version: 2012-10-17
+        Id: Policy2313423511
+        Statement:
+          - Sid: Stmt2313423512
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:role/PlzBuilderRole # This should also be a parameter for other accounts and use cases
+            Action:
+              - 's3:GetBucketAcl'
+              - 's3:GetBucketPolicy'
+            Resource: !GetAtt BearcatSourceBucket.Arn
+          - Sid: Stmt2313423513
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:role/PlzBuilderRole # This should also be a parameter for other accounts and use cases
+            Action:
+              - 's3:*'
+            Resource:
+              'Fn::Join':
+                - ''
+                - - !GetAtt BearcatSourceBucket.Arn
+                  - /*
+  BeartBucketSync:
     Type: AWS::EC2::Instance
     Metadata:
       Comment: Install the bearcat application
       AWS::CloudFormation::Init:
         config:
           sources:
-            "/usr/bin": "https://github.com/ardusjax/bearcat/tarball/master" # Right now this get's the source, but it will install the binary
+            "/usr/bin": target/release/bearcat # Right now this get's the source, but it will install the binary
           files:
             "/etc/cfn/cfn-hup.conf":
               content: |
