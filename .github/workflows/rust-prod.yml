@@ -20,5 +20,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/release/bearcat
           asset_name: bearcat
-          tag: ${{ github.ref }}
+          tag: 1.0.0
           overwrite: true
