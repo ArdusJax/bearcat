@@ -16,10 +16,10 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
       - name: Upload binaries to release
-            uses: svenstaro/upload-release-action@v1-release
-            with:
-              repo_token: ${{ secrets.GITHUB_TOKEN }}
-              file: target/release/bearcat
-              asset_name: bearcat
-              tag: ${{ github.ref }}
-              overwrite: true
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/bearcat
+          asset_name: bearcat
+          tag: ${{ github.ref }}
+          overwrite: true
