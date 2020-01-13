@@ -11,4 +11,4 @@ installed="which aws"
 [$installed -eq 0] && echo "aws cli is installed..." || echo "aws cli could not be found or is not installed. Please install the cli and try this script again."
 
 # Execute the cloud formation with the given parameters
-aws cloudformation create-stack --stack-name bearcat-sync --template-body file:///bearcat.yaml --parameters ParameterKey=SourceBucketName,ParameterValue=$SOURCE_BUCKET,ParameterKey=DestinationBucketName,ParameterValue=$DESTINATION_BUCKET,ParameterKey=KeyName,ParameterValue=$KEY_NAME
+aws cloudformation create-stack --stack-name bearcat-sync --template-body file:///resources/bearcat.yaml --parameters ParameterKey=SourceBucketName,ParameterValue=$SOURCE_BUCKET,ParameterKey=DestinationBucketName,ParameterValue=$DESTINATION_BUCKET,ParameterKey=KeyName,ParameterValue=$KEY_NAME
