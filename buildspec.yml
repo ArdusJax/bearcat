@@ -2,7 +2,7 @@ version: 0.2
 
 phases:
 
-  prebuild:
+  pre_build:
     commands:
       - url --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
