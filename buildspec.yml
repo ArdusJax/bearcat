@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+
+  prebuild:
+    commands:
+      - url --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+  build:
+    commands:
+      - echo Building...
+      - cargo test
+      - cargo build --release
+  # Source bucket naming convention: <environment>-build-sync-bucket
+  # Deployment bucket naming convention: <environment>-deploy-sync-bucket
+  deploy:
+    commands:
+      - echo Deploying infrastructure...
+      - chmod +x resources/setup.sh
+      - ./resources/setup.sh "cdc-build-sync-bucket" "devtest-deploy-sync-bucket" "aws-key-name"
