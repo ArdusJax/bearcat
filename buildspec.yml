@@ -16,8 +16,8 @@ phases:
       - echo Building...
       - cargo test
       - cargo build --release
-  # Source bucket naming convention: <environment>-build-sync-bucket
-  # Deployment bucket naming convention: <environment>-deploy-sync-bucket
       - echo Deploying infrastructure...
       - chmod +x resources/setup.sh
+      # Source bucket naming convention: <environment>-build-sync-bucket
+      # Deployment bucket naming convention: <environment>-deploy-sync-bucket
       - ./resources/setup.sh "cdc-build-sync-bucket" "devtest-deploy-sync-bucket" "aws-key-name"
