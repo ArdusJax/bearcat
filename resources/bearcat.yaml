@@ -18,12 +18,7 @@ Parameters:
     Default: us-west-2
     Description: Region where the destination bucket is located
     Type: String
-  BearcatSourceBucketName:
-    Type: String
-    Description: >-
-      The Name of the S3 Bucket tied to the environment must be lowercase only
-      dashes and alphanumeric supported
-  SourceAccountId:
+  BuilderAccountId:
     Type: Number
     Description: Account ID allowed access to this bucket.  Should be a Deploy account.
 
@@ -31,7 +26,7 @@ Resources:
   BearcatSourceBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Ref BearcatSourceBucketName
+      BucketName: !Ref SourceBucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -47,7 +42,7 @@ Resources:
   BearcatSourceBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
-      Bucket: !Ref BearcatSourceBucketName
+      Bucket: !Ref SourceBucketName
       PolicyDocument:
         Version: 2012-10-17
         Id: Policy2313423511
@@ -117,8 +112,22 @@ Resources:
               owner: "root"
               group: "root"
           commands:
-            enable_bearcat:
+            1_enable_bearcat:
               command: "systemctl enable bearcat"
+            2_pvcreate:
+              command: pvcreate /dev/xvdf
+            3_vgcreate:
+              command: vgcreate vg0 /dev/xvdf
+            4_lvcreate:
+              command: lvcreate -l 100%FREE -n bucket_sync vg0
+            5_mkfs:
+              command: mkfs.ext4 /dev/vg0/bucket_sync
+            6_mkdir:
+             command: mkdir /var/bucket_sync
+            7_fstab:
+              command: echo "/dev/mapper/vg0-bucket_sync /var/bucket_sync ext4 defaults 0 2" >> /etc/fstab
+            8_mount:
+              command: mount -a
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
@@ -133,6 +142,11 @@ Resources:
           /opt/aws/bin/cfn-init -s ${AWS::StackId} -r BearcatBucketSync --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
           /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource BearcatBucketSync --region ${AWS::Region}
+      BlockDeviceMappings:
+        - DeviceName: /dev/sdf
+          Ebs:
+            DeleteOnTermination: false
+            VolumeSize: 100
 
 Outputs:
   InstanceId:
