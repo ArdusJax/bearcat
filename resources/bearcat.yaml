@@ -138,7 +138,7 @@ Resources:
               command: mount -a
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT5M
+        Timeout: PT15M
     Properties:
       ImageId: ami-0619d38218e46ef86 #ami-00068cd7555f543d5 # Amazon Linux 2 AMI
       # KeyName:
