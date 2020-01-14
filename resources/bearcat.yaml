@@ -66,7 +66,7 @@ Resources:
                 - ''
                 - - !GetAtt BearcatSourceBucket.Arn
                   - /*
-  BeartBucketSync:
+  BearcatBucketSync:
     Type: AWS::EC2::Instance
     Metadata:
       Comment: Install the bearcat application
@@ -148,3 +148,7 @@ Resources:
             DeleteOnTermination: false
             VolumeSize: 100
 
+Outputs:
+  InstanceId:
+    Description: The instance ID of the bearcat bucket sync tool
+    Value: !Ref "BearcatBucketSync"
