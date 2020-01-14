@@ -20,4 +20,5 @@ phases:
       - chmod +x resources/setup.sh
       # Source bucket naming convention: <environment>-build-sync-bucket
       # Deployment bucket naming convention: <environment>-deploy-sync-bucket
-      - ./resources/setup.sh "cdc-build-sync-bucket" "devtest-deploy-sync-bucket" "aws-key-name" "966799970081"
+      - aws cloudformation create-stack --stack-name bearcat-sync --template-body file://resources/bearcat.yaml \
+            --parameters ParameterKey=SourceBucketName,ParameterValue="cdc-build-sync-bucket-test",ParameterKey=DestinationBucketName,ParameterValue="devtest-deploy-sync-bucket",ParameterKey=KeyName,ParameterValue="aws-key-name",ParameterKey=BuilderAccountId,ParameterValue="966799970081"
