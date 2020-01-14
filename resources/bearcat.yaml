@@ -148,8 +148,3 @@ Resources:
             DeleteOnTermination: false
             VolumeSize: 100
 
-Outputs:
-  InstanceId:
-    Description: The instance ID of the bearcat bucket sync tool
-    Value:
-      Ref: "BearcatBucketSync"
