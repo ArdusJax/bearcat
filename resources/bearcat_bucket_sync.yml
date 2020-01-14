@@ -34,7 +34,7 @@ Resources:
       Roles: 
         - Ref: "BearcatBucketSyncRole"
           
-  RootInstanceProfile: 
+  BearcatInstanceProfile: 
     Type: "AWS::IAM::InstanceProfile"
     Properties: 
       Path: "/"

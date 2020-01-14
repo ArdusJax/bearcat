@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "IAM user for bearcat sync"
+Parameters:
+  UserName:
+    Type: String
+    Default: "bearcat-sync"
+  PolicyName:
+    Type: String
+    Default: "bearcat-sync-policy"
+Resources:
+  BearcatSyncUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref UserName
+  BearcatSyncPolicy:
+    Type: AWS::IAM::Policy
+    DependsOn:
+      - BearcatSyncUser 
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:*
+              - logs:*
+              - cloudformation:*
+              - cloudwatch:*
+              - ec2:*
+            Effect: Allow
+            Resource: "*"
+      PolicyName: !Ref PolicyName
+      Users:
+        - !Ref UserName
+  CFNKeys:
+    Type: AWS::IAM::AccessKey
+    DependsOn:
+      - BearcatSyncUser
+    Properties:
+      UserName: !Ref UserName
+Outputs:
+  AccessKey:
+    Value: !Ref "CFNKeys"
+    Description: AWSAccessKeyId of new user
+  SecretKey:
+    Value: !GetAtt [CFNKeys, SecretAccessKey]
+    Description: AWSSecretAccessKey of new user
