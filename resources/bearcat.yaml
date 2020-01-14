@@ -10,6 +10,14 @@ Parameters:
   KeyName:
     Description: Keyname
     Type: String
+  SourceUserName:
+    Default: "bearcat-sync"
+    Description: Name of the user in the account used as the source of the sync
+    Type: String
+  DestinationUserName:
+    Default: "bearcat-sync-destination-user"
+    Description: Name of the user in the account that is the target of the sync
+    Type: String
   SourceAWSRegion:
     Default: us-west-2
     Description: Region where the source bucket is located
@@ -50,7 +58,7 @@ Resources:
           - Sid: Stmt2313423512
             Effect: Allow
             Principal:
-              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:role/PlzBuilderRole # This should also be a parameter for other accounts and use cases
+              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:user/${SourceUserName} # This should also be a parameter for other accounts and use cases
             Action:
               - 's3:GetBucketAcl'
               - 's3:GetBucketPolicy'
@@ -58,7 +66,7 @@ Resources:
           - Sid: Stmt2313423513
             Effect: Allow
             Principal:
-              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:role/PlzBuilderRole # This should also be a parameter for other accounts and use cases
+              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:user/${SourceUserName} # This should also be a parameter for other accounts and use cases
             Action:
               - 's3:*'
             Resource:
