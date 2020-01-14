@@ -6,10 +6,10 @@ phases:
     runtime-versions:
       docker: 18
 
-      # pre_build:
-      #   commands:
-      #     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      #     - PATH=$PATH:$HOME/.cargo/bin
+  pre_build:
+    commands:
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - PATH=$PATH:$HOME/.cargo/bin
 
   build:
     commands:
