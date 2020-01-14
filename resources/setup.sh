@@ -13,8 +13,5 @@ echo "AWS cli found..."
 
 # Execute the cloud formation with the given parameters
 echo "Executing cloudformation..."
-aws cloudformation create-stack --stack-name bearcat-sync --template-body file://resources/bearcat.yaml --parameters \
-    ParameterKey=SourceBucketName,ParameterValue=$SOURCE_BUCKET,\
-    ParameterKey=DestinationBucketName,ParameterValue=$DESTINATION_BUCKET,\
-    ParameterKey=KeyName,ParameterValue=$KEY_NAME,\
-    ParameterKey=BuilderAccountId,ParameterValue=$BUILDER_ACCT_ID
+aws cloudformation create-stack --stack-name bearcat-sync --template-body file://resources/bearcat.yaml \
+    --parameters ParameterKey=SourceBucketName,ParameterValue=$SOURCE_BUCKET,ParameterKey=DestinationBucketName,ParameterValue=$DESTINATION_BUCKET,ParameterKey=KeyName,ParameterValue=$KEY_NAME,ParameterKey=BuilderAccountId,ParameterValue=$BUILDER_ACCT_ID
