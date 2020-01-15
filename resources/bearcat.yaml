@@ -153,9 +153,7 @@ Resources:
       InstanceType: t2.micro
       SecurityGroups:
         - "sg-06bcbe9e9ed10d516"
-      VpcId: "vpc-040f2ea2daa3dab17"
-      Subnets:
-        - "subnet-0dadd355e52abb837"
+      SubnetId: "subnet-0dadd355e52abb837"
       UserData:
         Fn::Base64: fn::Sub | \#!/bin/bash -xe
           yum update -y aws-cfn-bootstrap
