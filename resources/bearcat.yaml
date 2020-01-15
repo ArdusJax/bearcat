@@ -105,7 +105,7 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                   - logs:DescribeLogStreams
-                Resource: !Sub arn:${AWS::Region}:logs:*:*:* 
+                Resource: !Sub arn:logs:${AWS::Region}:*:*:* 
   LogRoleInstanceProfile: 
     Type: AWS::IAM::InstanceProfile
     Properties: 
