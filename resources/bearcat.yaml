@@ -88,7 +88,7 @@ Resources:
       AWS::CloudFormation::Init:
         config:
           sources:
-            "/usr/bin": target/release/bearcat # Right now this get's the source, but it will install the binary
+            "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.0.0/bearcat #target/release/bearcat # Right now this get's the source, but it will install the binary
           files:
             "/etc/cfn/cfn-hup.conf":
               content: |
@@ -145,7 +145,7 @@ Resources:
             #   command: mount -a
     CreationPolicy:
       ResourceSignal:
-        Timeout: PT15M
+        Timeout: PT5M
     Properties:
       ImageId: ami-000de0f82eadb7e00 #ami-0619d38218e46ef86 #ami-00068cd7555f543d5 # Amazon Linux 2 AMI
       KeyName:
