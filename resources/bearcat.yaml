@@ -47,6 +47,13 @@ Resources:
             Status: Enabled
           - NoncurrentVersionExpirationInDays: 30
             Status: Enabled
+      Tags:
+        -
+          Key: "org"
+          Value: "plz"
+        -
+          Key: "Application"
+          Value: "bearcat-sync"
   BearcatSourceBucketPolicy:
     Type: 'AWS::S3::BucketPolicy'
     Properties:
@@ -74,6 +81,13 @@ Resources:
                 - ''
                 - - !GetAtt BearcatSourceBucket.Arn
                   - /*
+      Tags:
+        -
+          Key: "org"
+          Value: "plz"
+        -
+          Key: "Application"
+          Value: "bearcat-sync"
   BearcatBucketSync:
     Type: AWS::EC2::Instance
     Metadata:
@@ -140,9 +154,9 @@ Resources:
       ResourceSignal:
         Timeout: PT15M
     Properties:
-      ImageId: ami-0619d38218e46ef86 #ami-00068cd7555f543d5 # Amazon Linux 2 AMI
-      # KeyName:
-      #   Ref: KeyName
+      ImageId: ami-000de0f82eadb7e00 #ami-0619d38218e46ef86 #ami-00068cd7555f543d5 # Amazon Linux 2 AMI
+      KeyName:
+        Ref: KeyName
       InstanceType: t2.micro
       UserData:
         Fn::Base64: fn::Sub | \#!/bin/bash -xe
@@ -155,6 +169,13 @@ Resources:
           Ebs:
             DeleteOnTermination: false
             VolumeSize: 100
+      Tags:
+        -
+          Key: "org"
+          Value: "plz"
+        -
+          Key: "Application"
+          Value: "bearcat-sync"
 
 Outputs:
   InstanceId:
