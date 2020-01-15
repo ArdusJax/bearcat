@@ -81,13 +81,6 @@ Resources:
                 - ''
                 - - !GetAtt BearcatSourceBucket.Arn
                   - /*
-      Tags:
-        -
-          Key: "org"
-          Value: "plz"
-        -
-          Key: "Application"
-          Value: "bearcat-sync"
   BearcatBucketSync:
     Type: AWS::EC2::Instance
     Metadata:
