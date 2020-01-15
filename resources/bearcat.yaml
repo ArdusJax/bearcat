@@ -87,22 +87,25 @@ Resources:
       AssumeRolePolicyDocument: 
         Version: 2012-10-17
         Statement:  
-          Effect: Allow
-          Principal:  !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:user/${SourceUserName} 
-          Action:  sts:AssumeRole 
+          - Effect: Allow
+            Principal:   
+              Service:
+                - ec2.amazonaws.com
+            Action:  
+              - 'sts:AssumeRole' 
       Path: /
       Policies:  
         - PolicyName: LogRolePolicy
           PolicyDocument: 
             Version: 2012-10-17
             Statement:  
-              Effect: Allow
-              Action: 
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-                - logs:DescribeLogStreams
-              Resource: !Sub arn:${AWS::Region}:logs:*:*:* 
+              - Effect: Allow
+                Action: 
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: !Sub arn:${AWS::Region}:logs:*:*:* 
   LogRoleInstanceProfile: 
     Type: AWS::IAM::InstanceProfile
     Properties: 
