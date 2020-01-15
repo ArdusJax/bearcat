@@ -107,7 +107,8 @@ Resources:
     Type: AWS::IAM::InstanceProfile
     Properties: 
       Path: /
-      Roles:   !Ref LogRole  
+      Roles: 
+        - !Ref LogRole  
   CloudFormationLogs: 
     Type: AWS::Logs::LogGroup
     Properties: 
