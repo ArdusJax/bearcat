@@ -151,7 +151,7 @@ Resources:
       KeyName:
         Ref: KeyName
       InstanceType: t2.micro
-      SecurityGroups:
+      SecurityGroupIds:
         - "sg-06bcbe9e9ed10d516"
       SubnetId: "subnet-0dadd355e52abb837"
       UserData:
