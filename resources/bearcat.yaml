@@ -97,7 +97,11 @@ Resources:
             Version: 2012-10-17
             Statement:  
               Effect: Allow
-              Action: logs:CreateLogGroup logs:CreateLogStream logs:PutLogEvents logs:DescribeLogStreams
+              Action: 
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                - logs:DescribeLogStreams
               Resource: !Sub arn:${AWS::Region}:logs:*:*:* 
   LogRoleInstanceProfile: 
     Type: AWS::IAM::InstanceProfile
