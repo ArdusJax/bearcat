@@ -81,14 +81,41 @@ Resources:
                 - ''
                 - - !GetAtt BearcatSourceBucket.Arn
                   - /*
+  LogRole: 
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: 2012-10-17
+        Statement:  
+          Effect: Allow
+          Principal:  !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:user/${SourceUserName} 
+          Action:  sts:AssumeRole 
+      Path: /
+      Policies:  
+        PolicyName: LogRolePolicy
+        PolicyDocument: 
+          Version: 2012-10-17
+          Statement:  
+            Effect: Allow
+            Action: logs:CreateLogGroup logs:CreateLogStream logs:PutLogEvents logs:DescribeLogStreams
+            Resource: !Sub arn:${AWS::Region}:logs:*:*:* 
+  LogRoleInstanceProfile: 
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Path: /
+      Roles:   !Ref LogRole  
+  CloudFormationLogs: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 7
   BearcatBucketSync:
     Type: AWS::EC2::Instance
     Metadata:
       Comment: Install the bearcat application
       AWS::CloudFormation::Init:
         config:
-          sources:
-            "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.0.0/bearcat #target/release/bearcat # Right now this get's the source, but it will install the binary
+          # sources:
+          #  "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.0.0/bearcat #target/release/bearcat # Right now this get's the source, but it will install the binary
           files:
             "/etc/cfn/cfn-hup.conf":
               content: |
@@ -126,9 +153,60 @@ Resources:
               mode: "000700"
               owner: "root"
               group: "root"
+            "/etc/awslogs/awslogs.conf":
+              content: fn:Sub |
+                [general]
+                state_file= /var/awslogs/state/agent-state
+                
+                [/var/log/cloud-init.log]
+                file = /var/log/cloud-init.log
+                log_group_name =   ${!Ref CloudFormationLogs}  
+                log_stream_name = ${instance_id}/cloud-init.log
+                datetime_format = 
+                
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_group_name =   ${!Ref CloudFormationLogs}  
+                log_stream_name = ${instance_id}/cloud-init-output.log
+                datetime_format = 
+                
+                
+                [/var/log/cfn-init.log]
+                file = /var/log/cfn-init.log
+                log_group_name =   ${!Ref CloudFormationLogs}  
+                log_stream_name = ${instance_id}/cfn-init.log
+                datetime_format = 
+                
+                
+                [/var/log/cfn-hup.log]
+                file = /var/log/cfn-hup.log
+                log_group_name =   ${!Ref CloudFormationLogs}  
+                log_stream_name = ${instance_id}/cfn-hup.log
+                datetime_format = 
+                
+                
+                [/var/log/cfn-wire.log]
+                file = /var/log/cfn-wire.log
+                log_group_name =   ${!Ref CloudFormationLogs}  
+                log_stream_name = ${instance_id}/cfn-wire.log
+                datetime_format = 
+              mode: "000444"
+              owner: "root"
+              group: "root"
+            "/etc/awslogs/awscli.conf":
+              content: fn:Sub |
+                [plugins]
+                cwlogs = cwlogs
+                [default]
+                region = ${AWS::Region} 
+              mode: "000444"
+              owner: "root"
+              group: "root"
           commands:
-            1_enable_bearcat:
-              command: "systemctl enable bearcat"
+            1_create_state_dir:
+              command: "mkdir -p /var/awslogs/state"
+            # 1_enable_bearcat:
+            #   command: "systemctl enable bearcat"
             # 2_pvcreate:
             #   command: pvcreate /dev/xvdf
             # 3_vgcreate:
@@ -143,6 +221,19 @@ Resources:
             #   command: echo "/dev/mapper/vg0-bucket_sync /var/bucket_sync ext4 defaults 0 2" >> /etc/fstab
             # 8_mount:
             #   command: mount -a
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: true
+                ensure_running: true
+                files:
+                  - "/etc/cfn/cfn-hup.conf"
+                  - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+              awslogs:
+                enabled: true
+                ensure_running: true
+                files:
+                  - "/etc/awslogs/awslogs.conf"
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
