@@ -23,4 +23,4 @@ phases:
 
       # Source bucket naming convention: <environment>-build-sync-bucket
       # Deployment bucket naming convention: <environment>-deploy-sync-bucket
-      - aws cloudformation create-stack --stack-name bearcat-sync --disable-rollback --template-body file://resources/bearcat.yaml --parameters ParameterKey=SourceBucketName,ParameterValue="cdc-build-sync-bucket-test" ParameterKey=DestinationBucketName,ParameterValue="devtest-deploy-sync-bucket" ParameterKey=KeyName,ParameterValue="cdc-bearcat-sync" ParameterKey=BuilderAccountId,ParameterValue="966799970081"
+      - aws cloudformation create-stack --stack-name bearcat-sync --disable-rollback --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM" --template-body file://resources/bearcat.yaml --parameters ParameterKey=SourceBucketName,ParameterValue="cdc-build-sync-bucket-test" ParameterKey=DestinationBucketName,ParameterValue="devtest-deploy-sync-bucket" ParameterKey=KeyName,ParameterValue="cdc-bearcat-sync" ParameterKey=BuilderAccountId,ParameterValue="966799970081"
