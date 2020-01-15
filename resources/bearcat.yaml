@@ -151,6 +151,8 @@ Resources:
       KeyName:
         Ref: KeyName
       InstanceType: t2.micro
+      SecurityGroups:
+        - sg-06bcbe9e9ed10d516
       UserData:
         Fn::Base64: fn::Sub | \#!/bin/bash -xe
           yum update -y aws-cfn-bootstrap
