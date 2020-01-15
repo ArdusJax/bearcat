@@ -129,20 +129,20 @@ Resources:
           commands:
             1_enable_bearcat:
               command: "systemctl enable bearcat"
-            2_pvcreate:
-              command: pvcreate /dev/xvdf
-            3_vgcreate:
-              command: vgcreate vg0 /dev/xvdf
-            4_lvcreate:
-              command: lvcreate -l 100%FREE -n bucket_sync vg0
-            5_mkfs:
-              command: mkfs.ext4 /dev/vg0/bucket_sync
-            6_mkdir:
-             command: mkdir /var/bucket_sync
-            7_fstab:
-              command: echo "/dev/mapper/vg0-bucket_sync /var/bucket_sync ext4 defaults 0 2" >> /etc/fstab
-            8_mount:
-              command: mount -a
+            # 2_pvcreate:
+            #   command: pvcreate /dev/xvdf
+            # 3_vgcreate:
+            #   command: vgcreate vg0 /dev/xvdf
+            # 4_lvcreate:
+            #   command: lvcreate -l 100%FREE -n bucket_sync vg0
+            # 5_mkfs:
+            #   command: mkfs.ext4 /dev/vg0/bucket_sync
+            # 6_mkdir:
+            #  command: mkdir /var/bucket_sync
+            # 7_fstab:
+            #   command: echo "/dev/mapper/vg0-bucket_sync /var/bucket_sync ext4 defaults 0 2" >> /etc/fstab
+            # 8_mount:
+            #   command: mount -a
     CreationPolicy:
       ResourceSignal:
         Timeout: PT15M
@@ -157,11 +157,11 @@ Resources:
           /opt/aws/bin/cfn-init -s ${AWS::StackId} -r BearcatBucketSync --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
           /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource BearcatBucketSync --region ${AWS::Region}
-      BlockDeviceMappings:
-        - DeviceName: /dev/sdf
-          Ebs:
-            DeleteOnTermination: false
-            VolumeSize: 100
+      # BlockDeviceMappings:
+      #   - DeviceName: /dev/sdf
+      #     Ebs:
+      #       DeleteOnTermination: true
+      #       VolumeSize: 50
       Tags:
         -
           Key: "org"
