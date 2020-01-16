@@ -116,6 +116,18 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties: 
       RetentionInDays: 7
+  BearcatSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Bearcat Bucket Sync SecurityGroup
+      VpcId: "vpc-4aa98233"
+      Tags:
+        -
+          Key: "org"
+          Value: "plz"
+        -
+          Key: "Application"
+          Value: "bearcat-sync"
   BearcatBucketSync:
     Type: AWS::EC2::Instance
     Metadata:
