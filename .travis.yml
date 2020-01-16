@@ -11,7 +11,7 @@ before_deploy: "./build-release bearcat ${TRAVIS_TAG}-${TRAVIS_OS_NAME}"
 deploy:
   provider: releases
   api_key:
-    secure: "..."
+    secure: "GITHUB OAUTH TOKEN"
   file_glob: true
   file: "bearcat-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.*"
   skip_cleanup: true
