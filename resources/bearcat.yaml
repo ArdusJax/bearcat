@@ -246,11 +246,11 @@ Resources:
       ResourceSignal:
         Timeout: PT5M
     Properties:
-      ImageId: ami-0619d38218e46ef86 #ami-000de0f82eadb7e00 #ami-00068cd7555f543d5 # Amazon Linux 2 AMI
+      ImageId: ami-04590e7389a6e577c #ami-0619d38218e46ef86 #ami-000de0f82eadb7e00 #ami-00068cd7555f543d5 # Amazon Linux 2 AMI
       KeyName:
         Ref: KeyName
       InstanceType: t2.micro
-      IamInstanceProfile: LogRoleInstanceProfile
+      IamInstanceProfile: !Ref LogRoleInstanceProfile
       # SecurityGroupIds:
       #   - "sg-06bcbe9e9ed10d516"
       # SubnetId: "subnet-0dadd355e52abb837"
