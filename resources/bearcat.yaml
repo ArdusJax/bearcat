@@ -273,7 +273,7 @@ Resources:
       # SubnetId: "subnet-0dadd355e52abb837"
       UserData:
         Fn::Base64: fn::Sub | \#!/bin/bash -xe
-          yum update -y aws-cfn-bootstrap
+        # yum update -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -s ${AWS::StackId} -r BearcatBucketSync --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
           /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource BearcatBucketSync --region ${AWS::Region}
