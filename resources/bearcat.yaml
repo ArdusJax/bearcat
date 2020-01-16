@@ -120,6 +120,11 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Bearcat Bucket Sync SecurityGroup
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 22
+          ToPort: 22
       VpcId: "vpc-4aa98233"
       Tags:
         -
