@@ -17,4 +17,5 @@ deploy:
   skip_cleanup: true
   on:
     repo: ArdusJax/bearcat
-    branch: da-14370
+    rust: stable
+    tags: true
