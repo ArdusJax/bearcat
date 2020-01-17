@@ -139,8 +139,6 @@ Resources:
       Comment: Install the bearcat application
       AWS::CloudFormation::Init:
         config:
-          # sources:
-          #  "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.1.1-unstable/bearcat-1.1.1-unstable-linux.zip # Right now this get's the source, but it will install the binary
           yum:
             awslogs: []
           files:
@@ -173,7 +171,7 @@ Resources:
                 Restart=always
                 RestartSec=3
                 User=ec2-user
-                ExecStart=/usr/bin/bearcat 
+                ExecStart=/usr/bin/bearcat ${SourceBucketName} ${DestinationBucketName} ${SourceAWSRegion} ${DestinationAWSRegion}
 
                 [Install]
                 WantedBy=multi-user.target
@@ -238,6 +236,8 @@ Resources:
               command: "sudo systemctl start awslogsd"
             4_enable_log_service:
               command: "sudo systemctl enable awslogsd.service"
+            5_download_bearcat_sync:
+              command: "cd /usr/bin; curl -L https://github.com/ArdusJax/bearcat/releases/download/1.1.1-unstable/bearcat-1.1.1-unstable-linux.zip --output bearcat-1.1.1-unstable-linux.zip; unzip bearcat-1.1.1-unstable-linux.zip; rm -rf bearcat-1.1.1-unstable-linux.zip"
             # 1_enable_bearcat:
             #   command: "systemctl enable bearcat"
             # 2_pvcreate:
@@ -271,14 +271,13 @@ Resources:
       ResourceSignal:
         Timeout: PT5M
     Properties:
-      ImageId: ami-04590e7389a6e577c #ami-0619d38218e46ef86 #ami-000de0f82eadb7e00 #ami-00068cd7555f543d5 # Amazon Linux 2 AMI
+      ImageId: ami-04590e7389a6e577c # Amazon Linux 2 AMI
       KeyName:
         Ref: KeyName
       InstanceType: t2.micro
       IamInstanceProfile: !Ref LogRoleInstanceProfile
       SecurityGroupIds:
         - !GetAtt BearcatSecurityGroup.GroupId
-      # SubnetId: "subnet-0dadd355e52abb837"
       UserData:
         Fn::Base64: !Sub | 
            #!/bin/bash -xe
