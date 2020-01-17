@@ -230,6 +230,8 @@ Resources:
           commands:
             1_create_state_dir:
               command: "mkdir -p /var/awslogs/state"
+            2_install_awslogs:
+              command: "sudo yum install -y awslogs"
             # 1_enable_bearcat:
             #   command: "systemctl enable bearcat"
             # 2_pvcreate:
