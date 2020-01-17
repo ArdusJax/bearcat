@@ -262,11 +262,6 @@ Resources:
                 files:
                   - "/etc/cfn/cfn-hup.conf"
                   - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
-              awslogs:
-                enabled: true
-                ensure_running: true
-                files:
-                  - "/etc/awslogs/awslogs.conf"
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
