@@ -15,6 +15,7 @@ use clap::{App, ArgMatches};
 use rusoto_core::region::Region;
 use rusoto_s3::S3Client;
 use std::str::FromStr;
+use std::env;
 // Flow of the application
 // Set the AWS profile for the commercial role with bucket access
 // Download the contents of the commercial bucket
@@ -72,8 +73,18 @@ fn main() {
                     file_name, e
                 )),
             }
+            // Set to the destination profile
+            let up_profile = "AWS_PROFILE";
+            env::set_var(up_profile, "destination");
+
             // Upload the artifact from the local machine to the destination bucket
-            let upload_result = upload(&client, "data", &file_name, destination_bucket.unwrap());
+            let upload_client = rusoto_s3::S3Client::new(Region::from_str(&source_region).unwrap());
+            let upload_result = upload(
+                &upload_client,
+                "data",
+                &file_name,
+                destination_bucket.unwrap(),
+            );
             match upload_result {
                 Ok(res) => println!("Upload was successful!\n{:?}", res),
                 Err(e) => panic!(format!("Could not upload artifact...\nError:\n{:?}", e)),
