@@ -143,7 +143,7 @@ Resources:
           #  "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.0.0/bearcat #target/release/bearcat # Right now this get's the source, but it will install the binary
           files:
             "/etc/cfn/cfn-hup.conf":
-              content: |
+              content: !Sub |
                 [main]
                 stack=${AWS::StackId}
                 region=${AWS::Region}
@@ -151,7 +151,7 @@ Resources:
               owner: "root"
               group: "root"
             "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
-              content: fn::Sub |
+              content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
                 path=Resources.BearcatBucketSync.Metadata.AWS::CloudFormation::Init
@@ -179,7 +179,7 @@ Resources:
               owner: "root"
               group: "root"
             "/etc/awslogs/awslogs.conf":
-              content: fn:Sub |
+              content: !Sub |
                 [general]
                 state_file= /var/awslogs/state/agent-state
                 
@@ -219,7 +219,7 @@ Resources:
               owner: "root"
               group: "root"
             "/etc/awslogs/awscli.conf":
-              content: fn:Sub |
+              content: !Sub |
                 [plugins]
                 cwlogs = cwlogs
                 [default]
