@@ -140,7 +140,7 @@ Resources:
       AWS::CloudFormation::Init:
         config:
           # sources:
-          #  "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.0.0/bearcat #target/release/bearcat # Right now this get's the source, but it will install the binary
+          #  "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.1.1-unstable/bearcat-1.1.1-unstable-linux.zip # Right now this get's the source, but it will install the binary
           yum:
             awslogs: []
           files:
@@ -262,7 +262,7 @@ Resources:
                 files:
                   - "/etc/cfn/cfn-hup.conf"
                   - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
-              awslogs:
+              awslogsd:
                 enabled: true
                 ensure_running: true
                 files:
