@@ -160,7 +160,7 @@ Resources:
               owner: "root"
               group: "root"
             "/etc/systemd/system/bearcat.service":
-              content: |
+              content: !Sub |
                 [Unit]
                 Description=bearcat S3 bucket sync service
                 After=network.target
