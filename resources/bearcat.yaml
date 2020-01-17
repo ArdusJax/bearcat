@@ -234,6 +234,10 @@ Resources:
               command: "mkdir -p /var/awslogs/state"
             2_install_awslogs:
               command: "sudo yum install -y awslogs"
+            3_start_log_daemon:
+              command: "sudo systemctl start awslogsd"
+            4_enable_log_service:
+              command: "sudo systemctl enable awslogsd.service"
             # 1_enable_bearcat:
             #   command: "systemctl enable bearcat"
             # 2_pvcreate:
