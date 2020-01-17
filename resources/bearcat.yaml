@@ -141,6 +141,8 @@ Resources:
         config:
           # sources:
           #  "/usr/bin": https://github.com/ArdusJax/bearcat/releases/download/1.0.0/bearcat #target/release/bearcat # Right now this get's the source, but it will install the binary
+          yum:
+            awslogs: []
           files:
             "/etc/cfn/cfn-hup.conf":
               content: !Sub |
