@@ -188,34 +188,34 @@ Resources:
                 [/var/log/cloud-init.log]
                 file = /var/log/cloud-init.log
                 log_group_name =   ${CloudFormationLogs}  
-                log_stream_name = {instance_id}/cloud-init.log
+                log_stream_name = BearcatBucketSync/cloud-init.log
                 datetime_format = 
                 
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_group_name =   ${CloudFormationLogs}  
-                log_stream_name = {instance_id}/cloud-init-output.log
+                log_stream_name = BearcatBucketSync/cloud-init-output.log
                 datetime_format = 
                 
                 
                 [/var/log/cfn-init.log]
                 file = /var/log/cfn-init.log
                 log_group_name =   ${CloudFormationLogs}  
-                log_stream_name = {instance_id}/cfn-init.log
+                log_stream_name = BearcatBucketSync/cfn-init.log
                 datetime_format = 
                 
                 
                 [/var/log/cfn-hup.log]
                 file = /var/log/cfn-hup.log
                 log_group_name =   ${CloudFormationLogs}  
-                log_stream_name = {instance_id}/cfn-hup.log
+                log_stream_name = BearcatBucketSync/cfn-hup.log
                 datetime_format = 
                 
                 
                 [/var/log/cfn-wire.log]
                 file = /var/log/cfn-wire.log
                 log_group_name =   ${CloudFormationLogs}  
-                log_stream_name = {instance_id}/cfn-wire.log
+                log_stream_name = BearcatBucketSync/cfn-wire.log
                 datetime_format = 
               mode: "000444"
               owner: "root"
@@ -262,6 +262,11 @@ Resources:
                 files:
                   - "/etc/cfn/cfn-hup.conf"
                   - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+              awslogs:
+                enabled: true
+                ensure_running: true
+                files:
+                  - "/etc/awslogs/awslogs.conf"
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
