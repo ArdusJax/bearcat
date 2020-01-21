@@ -12,6 +12,7 @@ yaml-rust = {version = "0.4.3"}
 rusoto_credential = "0.42.0"
 rusoto_core = "0.42.0"
 rusoto_sts = "0.42.0"
+rusoto_ssm = "0.42.0"
 rusoto_s3 = "0.42.0"
 futures = "0.1.29"
 bytes = "0.4.12"

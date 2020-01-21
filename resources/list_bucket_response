@@ -1,0 +1,4 @@
+{ common_prefixes: None, contents: Some([Object { e_tag: Some("\"e0b805b5969df6c2c7dff6038d960d52-8\""), key: Some("go1.12.5.linux-amd64.tar.gz"), last_modified: Some("2019-12-01T23:59:44.000Z"), owner: None, size: Some(127938445), storage_class: Some("STANDARD")
+        }
+    ]), continuation_token: None, delimiter: None, encoding_type: None, is_truncated: Some(false), key_count: Some(1), max_keys: Some(1000), name: Some("bearcat-commercial"), next_continuation_token: None, prefix: Some(""), start_after: None
+}
