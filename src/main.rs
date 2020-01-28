@@ -41,19 +41,13 @@ use simplelog::*;
 // Upload was downloaded from the commercial bucket into the GovCloud bucket
 fn main() {
     // Initialize the logger
-    CombinedLogger::init(vec![
-        TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed).unwrap(),
-        WriteLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            File::create("bearcat_sync.log").unwrap(),
-        ),
-    ])
-    .unwrap();
+    let _ = SimpleLogger::init(LevelFilter::Info, Config::default());
+    info!(target: "INITIALIZATION", "Loading the application cli");
     // Initialize the application
     let yaml = load_yaml!("cli.yml");
     let app = App::from(yaml).version("0.1.0");
     // Gather the config/app args
+    info!(target: "INITIALIZATION", "Parsing cli parameters");
     let matches = app.get_matches();
     let profile = matches.value_of("profile"); // Get rid of this option
     let ssm_key = matches.value_of("ssm_key");
@@ -99,6 +93,7 @@ fn main() {
     ////// MOVE/BREAK THIS OUT ////////////
     // Use the chain provider credentials for access to ssm
     // This will move to using just the containerprovider credentials provider later
+    info!(target: "CRED EVENTS", "Creating the credentials provider");
     let cred_prov = CredentialProvider::AwsSsm {
         key: ssm_key.unwrap().to_owned(),
         region: Region::from_str(&source_region).unwrap(),

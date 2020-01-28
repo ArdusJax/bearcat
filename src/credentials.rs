@@ -26,12 +26,7 @@ impl CredentialProvider {
     }
 }
 
-// All of these need to move into the impl since this can just come from Self... for now just getting things working
-// Get the credentials from ssm
 fn get_creds_from_ssm(key: String, region: Region) -> Result<AwsCredentials, Box<dyn Error>> {
-    // need real logging not println
-    // need to include error chaining
-    // Walk the AWS credential chain
     let client =
         rusoto_ssm::SsmClient::new_with(HttpClient::new().unwrap(), ChainProvider::new(), region);
     let req = GetParameterRequest {
