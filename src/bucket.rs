@@ -12,6 +12,7 @@ use std::io::BufReader;
 use futures::prelude::*;
 use std::path::Path;
 use bytes::Bytes;
+use log::{info, warn};
 
 // Download contents to an S3 bucket
 pub fn download<'a, 'b>(
@@ -26,6 +27,7 @@ pub fn download<'a, 'b>(
             key: String::from(path),
             ..Default::default()
         };
+        info!(target: "BUCKET DOWNLOAD", "Checking accesss to bucket: {:?}",&bucket);
         let res = client
             .get_object(req)
             .sync()
@@ -64,7 +66,6 @@ pub fn upload<'a, 'b, 'c>(
             .create_multipart_upload(req)
             .sync()
             .expect("Could not create multipart upload.");
-        println!("{:#?}", res);
         // Get the upload id from the resposne
         let upload_id = res.upload_id.unwrap();
         // Create all of the parts for uploading
@@ -171,6 +172,7 @@ pub fn get_bucket_object_keys(
         bucket: bucket_name.to_owned(),
         ..Default::default()
     };
+    info!(target: "BUCKET GET OBJECT", "getting objects from bucket: {:?}", &bucket_name);
     match client.list_objects_v2(req).sync() {
         Ok(result) => {
             let mut key_list: Vec<String> = Vec::new();
