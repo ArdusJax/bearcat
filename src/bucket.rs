@@ -1,4 +1,5 @@
 use crate::rusoto_s3::S3;
+use crate::data::{create_data_file, delete_data_file};
 use std::error::Error;
 use rusoto_s3::{
     CompleteMultipartUploadRequest, CompletedMultipartUpload, CompletedPart,
@@ -20,92 +21,78 @@ pub fn download<'a, 'b>(
     client: &rusoto_s3::S3Client,
     path: &'a str,
     bucket: &'b str,
-) -> Result<(), ()> {
-    // Always check if the permissions are correct
-    if check_bucket_access(client, bucket) {
-        let req = GetObjectRequest {
-            bucket: String::from(bucket),
-            key: String::from(path),
-            ..Default::default()
-        };
-        info!(target: "BUCKET DOWNLOAD", "Checking accesss to bucket: {:?}",&bucket);
-        let res = client
-            .get_object(req)
-            .sync()
-            .expect("error getting the object");
-        let stream = res.body.unwrap();
-        let body = stream.concat2().wait().unwrap();
-        match create_download_file(&body, path, "data") {
-            Ok(()) => (),
-            Err(e) => {
-                panic!("unable to create files or directories");
-            }
-        }
-    }
-    Ok(())
+) -> Result<bool, Box<dyn Error>> {
+    check_bucket_access(client, bucket)?;
+    let req = GetObjectRequest {
+        bucket: String::from(bucket),
+        key: String::from(path),
+        ..Default::default()
+    };
+    info!(target: "BUCKET DOWNLOAD", "Checking accesss to bucket: {:?}",&bucket);
+    let res = client
+        .get_object(req)
+        .sync()
+        .map_err(|e| format! {"Error getting object from source bucket {:?}", e})?;
+    let stream = res.body.unwrap();
+    let body = stream.concat2().wait().unwrap();
+    create_data_file(&body, path, "data")
 }
 
 // Upload using multipart method, the contents to an S3 bucket
-// Todo: Add actual type safe results
 pub fn upload<'a, 'b, 'c>(
     client: &rusoto_s3::S3Client,
     path: &'a str,
     filename: &'b str,
     bucket: &'c str,
-) -> Result<(), Box<dyn Error>> {
-    // Always check if the permissions are correct
-    if check_bucket_access(client, bucket) {
-        // Create the request for a multiport upload to the S3 bucket
-        let req = CreateMultipartUploadRequest {
-            bucket: bucket.to_owned(),
-            key: filename.to_owned(),
-            ..Default::default()
-        };
+) -> Result<bool, Box<dyn Error>> {
+    check_bucket_access(client, bucket)?;
+    let req = CreateMultipartUploadRequest {
+        bucket: bucket.to_owned(),
+        key: filename.to_owned(),
+        ..Default::default()
+    };
 
-        // Make the request and log the result
-        let res = client
-            .create_multipart_upload(req)
+    let res = client
+        .create_multipart_upload(req)
+        .sync()
+        .map_err(|e| format! {"Failed to create multipart"})?;
+    let upload_id = res.upload_id.unwrap();
+
+    // Create all of the parts for uploading
+    let parts = processes_object(path, bucket, filename, &upload_id)?;
+    let mut completed_parts = Vec::new();
+    for part in parts {
+        let part_num = part.part_number;
+        let response = client
+            .upload_part(part)
             .sync()
-            .map_err(|e| format! {"Failed to create multipart"})?;
-        // Get the upload id from the resposne
-        let upload_id = res.upload_id.unwrap();
-        // Create all of the parts for uploading
-        let parts = processes_object(path, bucket, filename, &upload_id)?;
-        let mut completed_parts = Vec::new();
-        for part in parts {
-            let part_num = part.part_number;
-            let response = client
-                .upload_part(part)
-                .sync()
-                .map_err(|e| format! {"Failed to upload part"})?;
-            // Collect the completed  parts for finalizing later
-            completed_parts.push(CompletedPart {
-                e_tag: response.e_tag.clone(),
-                part_number: Some(part_num),
-            });
-        }
-        // Create the completed multipart upload with the added e-tags
-        let completed_upload = CompletedMultipartUpload {
-            parts: Some(completed_parts),
-        };
-
-        let complete_req = CompleteMultipartUploadRequest {
-            bucket: bucket.to_owned(),
-            key: filename.to_owned(),
-            upload_id: upload_id.to_owned(),
-            multipart_upload: Some(completed_upload),
-            ..Default::default()
-        };
-
-        client
-            .complete_multipart_upload(complete_req)
-            .sync()
-            .map_err(|e| format! {"Failed to complete the multipart upload"})?;
+            .map_err(|e| format! {"Failed to upload part"})?;
+        // Collect the completed  parts for finalizing later
+        completed_parts.push(CompletedPart {
+            e_tag: response.e_tag.clone(),
+            part_number: Some(part_num),
+        });
     }
-    // If the upload completed delete the object from the bucket
-    delete_bucket_object(&client, &bucket, &filename);
+    // Create the completed multipart upload with the added e-tags
+    let completed_upload = CompletedMultipartUpload {
+        parts: Some(completed_parts),
+    };
 
-    Ok(())
+    let complete_req = CompleteMultipartUploadRequest {
+        bucket: bucket.to_owned(),
+        key: filename.to_owned(),
+        upload_id: upload_id.to_owned(),
+        multipart_upload: Some(completed_upload),
+        ..Default::default()
+    };
+
+    client
+        .complete_multipart_upload(complete_req)
+        .sync()
+        .map_err(|e| format! {"Failed to complete the multipart upload"})?;
+
+    delete_bucket_object(&client, &bucket, &filename)?;
+    delete_data_file(&filename)
 }
 
 // Processes the file and return a vec of UploadPartRequest
@@ -136,8 +123,6 @@ fn processes_object(
     // If there are no errors return the vec of UploadPartRequest
     Ok(upload_requests)
 }
-
-fn delete_file(filename: &str) {}
 
 fn create_upload_part(
     bucket: &str,
@@ -173,17 +158,18 @@ fn delete_bucket_object(
     Ok(resp)
 }
 
-fn check_bucket_access(client: &rusoto_s3::S3Client, bucket_name: &str) -> bool {
+fn check_bucket_access(
+    client: &rusoto_s3::S3Client,
+    bucket_name: &str,
+) -> Result<bool, Box<dyn Error>> {
     let req = HeadBucketRequest {
         bucket: bucket_name.to_owned(),
     };
-    match client.head_bucket(req).sync() {
-        Ok(_) => true,
-        Err(e) => {
-            println!("error accessing the bucket: {:?}\n{:?}", bucket_name, e);
-            false
-        }
-    }
+    client
+        .head_bucket(req)
+        .sync()
+        .map_err(|e| format! {"error accessing the bucket {:?}", e})?;
+    Ok(true)
 }
 
 pub fn get_bucket_object_keys(
@@ -221,67 +207,10 @@ pub fn get_bucket_object_keys(
         }
     }
 }
-fn create_download_file(content: &bytes::Bytes, key: &str, base: &str) -> std::io::Result<()> {
-    let object = format!("{}/{}", base, key).to_string();
-    let object_path = Path::new(&object);
-    if !object_path.exists() {
-        // Create a directory for the object
-        // Panics if you can't create the directory
-        let mut create_path = object_path.to_str().unwrap();
-        if !create_path.ends_with('/') {
-            create_path = object_path.parent().unwrap().to_str().unwrap();
-        }
-        fs::create_dir_all(create_path).expect(
-            format!(
-                "failed to create directory {:?} for download",
-                &object_path.as_os_str()
-            )
-            .as_str(),
-        );
-        if !Path::new(object_path).is_dir() {
-            let mut file =
-                File::create(&object_path).expect("unable to write the file for download");
-            file.write_all(&content)
-                .expect("failed to write body to the file");
-        }
-    }
-    Ok(())
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bytes;
-
-    const FILE_CONTENT: &str = "I prematurely shot my wad on what was supposed to be a dry run..";
-    static TEST_DIR: &str = "file_tests";
-    const FILE_OBJECTS: [&'static str; 7] = [
-        "file_test",
-        "$sec)",
-        "",
-        "shared",
-        "se90",
-        "fake_file/bremerton",
-        "fake_file/another_deep/anderson",
-    ];
-    const FILE_OBJECTS_ABNORMAL: [&'static str; 7] = [
-        "fil42$est",
-        "$sec)",
-        "",
-        "c321",
-        "se90__",
-        "d!(&$^#",
-        "$$__",
-    ];
-    const FILE_OBJECTS_DIRECTORIES: [&'static str; 7] = [
-        "flin/",
-        "sampl3/",
-        "suds/",
-        "sample/nested/",
-        "sample/nested/another_nest/",
-        "flack/",
-        "Simple/Nested/",
-    ];
 
     #[test]
     fn create_upload_part_test() {
@@ -292,38 +221,5 @@ mod tests {
         assert_eq!(part.upload_id, "34");
         assert_eq!(part.key, "resources/test.txt");
         assert_eq!(part.body.is_some(), true);
-    }
-
-    #[test]
-    fn create_file_normal_names_test() {
-        let _file = bytes::Bytes::from(FILE_CONTENT);
-        for (_, _object) in FILE_OBJECTS.iter().enumerate() {
-            let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
-            let res = create_download_file(&_file, _object, TEST_DIR);
-            assert_eq!(res.unwrap(), ());
-            assert_eq!(Path::new(&_file_path).exists(), true);
-        }
-    }
-    #[test]
-    fn create_file_abnormal_names_test() {
-        let _file = bytes::Bytes::from(FILE_CONTENT);
-
-        for (_, _object) in FILE_OBJECTS_ABNORMAL.iter().enumerate() {
-            let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
-            let res = create_download_file(&_file, _object, TEST_DIR);
-            assert_eq!(res.unwrap(), ());
-            assert_eq!(Path::new(&_file_path).exists(), true);
-        }
-    }
-    #[test]
-    fn create_object_dir_test() {
-        let _file = bytes::Bytes::from(FILE_CONTENT);
-
-        for (_, _object) in FILE_OBJECTS_DIRECTORIES.iter().enumerate() {
-            let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
-            let res = create_download_file(&_file, _object, TEST_DIR);
-            assert_eq!(res.unwrap(), ());
-            assert_eq!(Path::new(&_file_path).exists(), true);
-        }
     }
 }

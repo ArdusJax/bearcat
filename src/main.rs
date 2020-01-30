@@ -21,6 +21,7 @@ extern crate bytes;
 
 mod bucket;
 mod credentials;
+mod data;
 
 use bucket::{download, upload, get_bucket_object_keys};
 use clap::{App, ArgMatches};
