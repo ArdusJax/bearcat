@@ -16,6 +16,8 @@ use std::path::Path;
 use bytes::Bytes;
 use log::{info, warn};
 
+static BASE_PATH: &str = "data";
+
 // Download contents to an S3 bucket
 pub fn download<'a, 'b>(
     client: &rusoto_s3::S3Client,
@@ -35,7 +37,7 @@ pub fn download<'a, 'b>(
         .map_err(|e| format! {"Error getting object from source bucket {:?}", e})?;
     let stream = res.body.unwrap();
     let body = stream.concat2().wait().unwrap();
-    create_data_file(&body, path, "data")
+    create_data_file(BASE_PATH, path, &body)
 }
 
 // Upload using multipart method, the contents to an S3 bucket
@@ -92,7 +94,7 @@ pub fn upload<'a, 'b, 'c>(
         .map_err(|e| format! {"Failed to complete the multipart upload"})?;
 
     delete_bucket_object(&client, &bucket, &filename)?;
-    delete_data_file(&filename)
+    delete_data_file(BASE_PATH, &filename)
 }
 
 // Processes the file and return a vec of UploadPartRequest

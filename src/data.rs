@@ -7,14 +7,22 @@ use std::path::Path;
 use bytes::Bytes;
 use log::{info, warn};
 
-pub fn delete_data_file(path: &str) -> Result<bool, Box<dyn Error>> {
+struct DataFile {}
+
+pub fn delete_data_file(base: &str, key: &str) -> Result<bool, Box<dyn Error>> {
+    // Duplicate code that will get removed after I go over this again
+    let object = format!("{}/{}", base, key).to_string();
+    let object_path = Path::new(&object);
+    if object_path.exists() {
+        fs::remove_file(object_path)?;
+    };
     Ok(true)
 }
 
 pub fn create_data_file(
-    content: &bytes::Bytes,
-    key: &str,
     base: &str,
+    key: &str,
+    content: &bytes::Bytes,
 ) -> Result<bool, Box<dyn Error>> {
     let object = format!("{}/{}", base, key).to_string();
     let object_path = Path::new(&object);
@@ -39,6 +47,7 @@ pub fn create_data_file(
                 .expect("failed to write body to the file");
         }
     }
+    // The path of the file created might be a better return type than bool?
     Ok(true)
 }
 
@@ -82,7 +91,7 @@ mod tests {
         let _file = bytes::Bytes::from(FILE_CONTENT);
         for (_, _object) in FILE_OBJECTS.iter().enumerate() {
             let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
-            let res = create_data_file(&_file, _object, TEST_DIR);
+            let res = create_data_file(TEST_DIR, _object, &_file);
             assert_eq!(res.unwrap(), true);
             assert_eq!(Path::new(&_file_path).exists(), true);
         }
@@ -93,7 +102,7 @@ mod tests {
 
         for (_, _object) in FILE_OBJECTS_ABNORMAL.iter().enumerate() {
             let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
-            let res = create_data_file(&_file, _object, TEST_DIR);
+            let res = create_data_file(TEST_DIR, _object, &_file);
             assert_eq!(res.unwrap(), true);
             assert_eq!(Path::new(&_file_path).exists(), true);
         }
@@ -104,7 +113,7 @@ mod tests {
 
         for (_, _object) in FILE_OBJECTS_DIRECTORIES.iter().enumerate() {
             let _file_path = format!("{}/{}", TEST_DIR, _object).to_string();
-            let res = create_data_file(&_file, _object, TEST_DIR);
+            let res = create_data_file(TEST_DIR, _object, &_file);
             assert_eq!(res.unwrap(), true);
             assert_eq!(Path::new(&_file_path).exists(), true);
         }
