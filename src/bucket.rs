@@ -1,9 +1,10 @@
 use crate::rusoto_s3::S3;
+use std::error::Error;
 use rusoto_s3::{
     CompleteMultipartUploadRequest, CompletedMultipartUpload, CompletedPart,
-    CreateMultipartUploadRequest, GetObjectRequest, UploadPartRequest, GetObjectOutput,
-    GetObjectError, HeadBucketRequest, ListObjectsV2Request, ListObjectsV2Error,
-    ListObjectsV2Output,
+    CreateMultipartUploadRequest, DeletedObject, DeleteObjectRequest, DeleteObjectOutput,
+    GetObjectRequest, UploadPartRequest, GetObjectOutput, GetObjectError, HeadBucketRequest,
+    ListObjectsV2Request, ListObjectsV2Error, ListObjectsV2Output,
 };
 use std::fs::File;
 use std::fs;
@@ -51,7 +52,7 @@ pub fn upload<'a, 'b, 'c>(
     path: &'a str,
     filename: &'b str,
     bucket: &'c str,
-) -> Result<(), std::io::Error> {
+) -> Result<(), Box<dyn Error>> {
     // Always check if the permissions are correct
     if check_bucket_access(client, bucket) {
         // Create the request for a multiport upload to the S3 bucket
@@ -65,7 +66,7 @@ pub fn upload<'a, 'b, 'c>(
         let res = client
             .create_multipart_upload(req)
             .sync()
-            .expect("Could not create multipart upload.");
+            .map_err(|e| format! {"Failed to create multipart"})?;
         // Get the upload id from the resposne
         let upload_id = res.upload_id.unwrap();
         // Create all of the parts for uploading
@@ -76,7 +77,7 @@ pub fn upload<'a, 'b, 'c>(
             let response = client
                 .upload_part(part)
                 .sync()
-                .expect("Failed to upload part");
+                .map_err(|e| format! {"Failed to upload part"})?;
             // Collect the completed  parts for finalizing later
             completed_parts.push(CompletedPart {
                 e_tag: response.e_tag.clone(),
@@ -96,12 +97,13 @@ pub fn upload<'a, 'b, 'c>(
             ..Default::default()
         };
 
-        let result = client.complete_multipart_upload(complete_req).sync();
-        match result {
-            Err(e) => println!("Could not complete the multipart upload.\n{:?}", e),
-            Ok(result) => println!("Result: \n{:?}", result),
-        }
+        client
+            .complete_multipart_upload(complete_req)
+            .sync()
+            .map_err(|e| format! {"Failed to complete the multipart upload"})?;
     }
+    // If the upload completed delete the object from the bucket
+    delete_bucket_object(&client, &bucket, &filename);
 
     Ok(())
 }
@@ -135,6 +137,8 @@ fn processes_object(
     Ok(upload_requests)
 }
 
+fn delete_file(filename: &str) {}
+
 fn create_upload_part(
     bucket: &str,
     filename: &str,
@@ -151,6 +155,24 @@ fn create_upload_part(
         ..Default::default()
     }
 }
+
+fn delete_bucket_object(
+    client: &rusoto_s3::S3Client,
+    bucket: &str,
+    key: &str,
+) -> Result<DeleteObjectOutput, Box<dyn Error>> {
+    let req = DeleteObjectRequest {
+        bucket: bucket.to_owned(),
+        key: key.to_owned(),
+        ..Default::default()
+    };
+    let resp = client
+        .delete_object(req)
+        .sync()
+        .map_err(|e| format! {"Error deleting the bucket object"})?;
+    Ok(resp)
+}
+
 fn check_bucket_access(client: &rusoto_s3::S3Client, bucket_name: &str) -> bool {
     let req = HeadBucketRequest {
         bucket: bucket_name.to_owned(),
