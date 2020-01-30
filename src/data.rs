@@ -16,6 +16,7 @@ pub fn delete_data_file(base: &str, key: &str) -> Result<bool, Box<dyn Error>> {
     if object_path.exists() {
         fs::remove_file(object_path)?;
     };
+    info!(target: "DELETE", "Deleted data file {:?} successfully", object);
     Ok(true)
 }
 
@@ -48,6 +49,7 @@ pub fn create_data_file(
         }
     }
     // The path of the file created might be a better return type than bool?
+    info!(target: "CREATED", "Created data file {:?} successfully", object);
     Ok(true)
 }
 

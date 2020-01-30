@@ -37,7 +37,10 @@ pub fn download<'a, 'b>(
         .map_err(|e| format! {"Error getting object from source bucket {:?}", e})?;
     let stream = res.body.unwrap();
     let body = stream.concat2().wait().unwrap();
-    create_data_file(BASE_PATH, path, &body)
+    create_data_file(BASE_PATH, path, &body)?;
+    delete_bucket_object(client, bucket, path)?;
+    info!(target: "BUCKET DOWNLOAD", "Download completed successfully from {:?}",&bucket);
+    Ok(true)
 }
 
 // Upload using multipart method, the contents to an S3 bucket
@@ -61,6 +64,7 @@ pub fn upload<'a, 'b, 'c>(
     let upload_id = res.upload_id.unwrap();
 
     // Create all of the parts for uploading
+    info!(target: "UPLOAD", "Creating parts for multipart upload...");
     let parts = processes_object(path, bucket, filename, &upload_id)?;
     let mut completed_parts = Vec::new();
     for part in parts {
@@ -88,12 +92,13 @@ pub fn upload<'a, 'b, 'c>(
         ..Default::default()
     };
 
+    info!(target: "UPLOAD", "Sending multipart upload completion request...");
     client
         .complete_multipart_upload(complete_req)
         .sync()
         .map_err(|e| format! {"Failed to complete the multipart upload"})?;
 
-    delete_bucket_object(&client, &bucket, &filename)?;
+    info!(target: "UPLOAD", "Upload to {:?} completed successfully", &bucket);
     delete_data_file(BASE_PATH, &filename)
 }
 
@@ -157,6 +162,7 @@ fn delete_bucket_object(
         .delete_object(req)
         .sync()
         .map_err(|e| format! {"Error deleting the bucket object"})?;
+    info!(target: "DELETE OBJECT", "Deleted object {:?} successfully", bucket);
     Ok(resp)
 }
 
