@@ -57,7 +57,7 @@ fn parse_cred_from_ssm_value(cap: Captures) -> Result<AwsCredentials, Box<dyn Er
 // todo: Add arg for the regex expression to be passed in
 fn parse_ssm_value(value: &str) -> Result<Captures, Box<dyn Error>> {
     let keys = Regex::new(r"(?x)(?P<id>.{20})::(?P<secret>.{40})")?;
-    match keys.captures(value) {
+    match keys.captures(value.trim()) {
         Some(v) => Ok(v),
         None => Err(Box::new(io::Error::new(
             ErrorKind::NotFound,
@@ -81,7 +81,7 @@ mod tests {
     ];
 
     // Invalid vaules that should produce errors when fed to the parser
-    const SSM_INVALID_TEST_VALUES: [&'static str; 7] = [
+    const SSM_INVALID_TEST_VALUES: [&'static str; 10] = [
         "RKAEIZTBPEI2H7N5VH3B9VB+PisnRTbW/A+NmVTRf2T3oJ//LqPEQnaXsUsC",
         "AKJDIZTWIEK7W8N5VH3B//AVHVRrsnRTbW/7qWKbAAf2T3DJR4LqPEQnaXs+sZ",
         "BZOAIZTBPRTbW/3q+MXTRf2T3oJ94LqR/+RaXsQsC",
@@ -89,6 +89,9 @@ mod tests {
         "nRTbW/7qWKbhh//::BZOAIZTBPRTbW/:::qR/+RaXsQsC/7qWKbAAfTAVH3B::",
         "::BZOAIZTBPEI2H7N5VH3BNVH2ogsnRTbW/3q+MXTRf2T3oJ94LqR/+RaXsQsC",
         "BZOAIZTBPEI2H7N5VH3BNVH2ogsnRTbW/3q+MXTRf2T3oJ94LqR/+RaXsQsC::",
+        " ZOAIZTBPEI2H7N5VH3B::NVH2ogsnRTbW/3q+MXTRf2T3oJ94LqR/+RaXsQsC",
+        "   IZTBPEI2H7N5VH3BNVH2ogsnRTbW/3q+MXTRf2T3oJ94LqR/+RaXsQsC::",
+        "BZOAIZTBPEI2H7N5VH3BNVH2ogsnRTbW/3q+MXTRf2T3oJ94LqR/+RaXsQs  ",
     ];
 
     #[test]
