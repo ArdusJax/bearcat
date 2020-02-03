@@ -1,3 +1,6 @@
 .idea
+/file_tests
+/data
 /target
 **/*.rs.bk
+*.log

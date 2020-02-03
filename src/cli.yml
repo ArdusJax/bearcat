@@ -15,6 +15,9 @@ args:
     - region_destination:
           help: AWS region for the bucket that is being sync'd to.
           required: true
+    - ssm_key:
+          help: SSM key that has credentials for syncing across accounts
+          required: false
     - profile:
           help: Commercial AWS profile
           required: false

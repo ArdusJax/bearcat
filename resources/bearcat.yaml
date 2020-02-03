@@ -10,25 +10,140 @@ Parameters:
   KeyName:
     Description: Keyname
     Type: String
+  SourceUserName:
+    Default: "bearcat-sync"
+    Description: Name of the user in the account used as the source of the sync
+    Type: String
+  DestinationUserName:
+    Default: "bearcat-sync-destination-user"
+    Description: Name of the user in the account that is the target of the sync
+    Type: String
   SourceAWSRegion:
+    Default: us-west-2
     Description: Region where the source bucket is located
     Type: String
   DestinationAWSRegion:
+    Default: us-west-2
     Description: Region where the destination bucket is located
     Type: String
+  BuilderAccountId:
+    Type: Number
+    Description: Account ID allowed access to this bucket.  Should be a Deploy account.
 
 Resources:
+  BearcatSourceBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref SourceBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - AbortIncompleteMultipartUpload:
+              DaysAfterInitiation : 1
+            Status: Enabled
+          - NoncurrentVersionExpirationInDays: 30
+            Status: Enabled
+      Tags:
+        -
+          Key: "org"
+          Value: "plz"
+        -
+          Key: "Application"
+          Value: "bearcat-sync"
+  BearcatSourceBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref SourceBucketName
+      PolicyDocument:
+        Version: 2012-10-17
+        Id: Policy2313423511
+        Statement:
+          - Sid: Stmt2313423512
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:user/${SourceUserName} # This should also be a parameter for other accounts and use cases
+            Action:
+              - 's3:GetBucketAcl'
+              - 's3:GetBucketPolicy'
+            Resource: !GetAtt BearcatSourceBucket.Arn
+          - Sid: Stmt2313423513
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${BuilderAccountId}:user/${SourceUserName} # This should also be a parameter for other accounts and use cases
+            Action:
+              - 's3:*'
+            Resource:
+              'Fn::Join':
+                - ''
+                - - !GetAtt BearcatSourceBucket.Arn
+                  - /*
+  LogRole: 
+    Type: AWS::IAM::Role
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: 2012-10-17
+        Statement:  
+          - Effect: Allow
+            Principal:   
+              Service:
+                - ec2.amazonaws.com
+            Action:  
+              - 'sts:AssumeRole' 
+      Path: /
+      Policies:  
+        - PolicyName: LogRolePolicy
+          PolicyDocument: 
+            Version: 2012-10-17
+            Statement:  
+              - Effect: Allow
+                Action: 
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogStreams
+                Resource: '*' 
+  LogRoleInstanceProfile: 
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Path: /
+      Roles: 
+        - !Ref LogRole  
+  CloudFormationLogs: 
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      RetentionInDays: 7
+  BearcatSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Bearcat Bucket Sync SecurityGroup
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 22
+          ToPort: 22
+      VpcId: "vpc-4aa98233"
+      Tags:
+        -
+          Key: "org"
+          Value: "plz"
+        -
+          Key: "Application"
+          Value: "bearcat-sync"
   BearcatBucketSync:
     Type: AWS::EC2::Instance
     Metadata:
       Comment: Install the bearcat application
       AWS::CloudFormation::Init:
         config:
-          sources:
-            "/usr/bin": "https://github.com/ardusjax/bearcat/tarball/master" # Right now this get's the source, but it will install the binary
+          yum:
+            awslogs: []
           files:
             "/etc/cfn/cfn-hup.conf":
-              content: |
+              content: !Sub |
                 [main]
                 stack=${AWS::StackId}
                 region=${AWS::Region}
@@ -36,7 +151,7 @@ Resources:
               owner: "root"
               group: "root"
             "/etc/cfn/hooks.d/cfn-auto-reloader.conf":
-              content: fn::Sub |
+              content: !Sub |
                 [cfn-auto-reloader-hook]
                 triggers=post.update
                 path=Resources.BearcatBucketSync.Metadata.AWS::CloudFormation::Init
@@ -45,7 +160,7 @@ Resources:
               owner: "root"
               group: "root"
             "/etc/systemd/system/bearcat.service":
-              content: |
+              content: !Sub |
                 [Unit]
                 Description=bearcat S3 bucket sync service
                 After=network.target
@@ -56,33 +171,132 @@ Resources:
                 Restart=always
                 RestartSec=3
                 User=ec2-user
-                ExecStart=/usr/bin/bearcat 
+                ExecStart=/usr/bin/bearcat ${SourceBucketName} ${DestinationBucketName} ${SourceAWSRegion} ${DestinationAWSRegion}
 
                 [Install]
                 WantedBy=multi-user.target
               mode: "000700"
               owner: "root"
               group: "root"
+            "/etc/awslogs/awslogs.conf":
+              content: !Sub |
+                [general]
+                state_file= /var/awslogs/state/agent-state
+                
+                [/var/log/cloud-init.log]
+                file = /var/log/cloud-init.log
+                log_group_name =   ${CloudFormationLogs}  
+                log_stream_name = BearcatBucketSync/cloud-init.log
+                datetime_format = 
+                
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_group_name =   ${CloudFormationLogs}  
+                log_stream_name = BearcatBucketSync/cloud-init-output.log
+                datetime_format = 
+                
+                
+                [/var/log/cfn-init.log]
+                file = /var/log/cfn-init.log
+                log_group_name =   ${CloudFormationLogs}  
+                log_stream_name = BearcatBucketSync/cfn-init.log
+                datetime_format = 
+                
+                
+                [/var/log/cfn-hup.log]
+                file = /var/log/cfn-hup.log
+                log_group_name =   ${CloudFormationLogs}  
+                log_stream_name = BearcatBucketSync/cfn-hup.log
+                datetime_format = 
+                
+                
+                [/var/log/cfn-wire.log]
+                file = /var/log/cfn-wire.log
+                log_group_name =   ${CloudFormationLogs}  
+                log_stream_name = BearcatBucketSync/cfn-wire.log
+                datetime_format = 
+              mode: "000444"
+              owner: "root"
+              group: "root"
+            "/etc/awslogs/awscli.conf":
+              content: !Sub |
+                [plugins]
+                cwlogs = cwlogs
+                [default]
+                region = ${AWS::Region} 
+              mode: "000444"
+              owner: "root"
+              group: "root"
           commands:
-            enable_bearcat:
-              command: "systemctl enable bearcat"
+            1_create_state_dir:
+              command: "mkdir -p /var/awslogs/state"
+            2_install_awslogs:
+              command: "sudo yum install -y awslogs"
+            3_start_log_daemon:
+              command: "sudo systemctl start awslogsd"
+            4_enable_log_service:
+              command: "sudo systemctl enable awslogsd.service"
+            5_download_bearcat_sync:
+              command: "cd /usr/bin; curl -L https://github.com/ArdusJax/bearcat/releases/download/1.1.1-unstable/bearcat-1.1.1-unstable-linux.zip --output bearcat-1.1.1-unstable-linux.zip; unzip bearcat-1.1.1-unstable-linux.zip; rm -rf bearcat-1.1.1-unstable-linux.zip"
+            # 1_enable_bearcat:
+            #   command: "systemctl enable bearcat"
+            # 2_pvcreate:
+            #   command: pvcreate /dev/xvdf
+            # 3_vgcreate:
+            #   command: vgcreate vg0 /dev/xvdf
+            # 4_lvcreate:
+            #   command: lvcreate -l 100%FREE -n bucket_sync vg0
+            # 5_mkfs:
+            #   command: mkfs.ext4 /dev/vg0/bucket_sync
+            # 6_mkdir:
+            #  command: mkdir /var/bucket_sync
+            # 7_fstab:
+            #   command: echo "/dev/mapper/vg0-bucket_sync /var/bucket_sync ext4 defaults 0 2" >> /etc/fstab
+            # 8_mount:
+            #   command: mount -a
+          services:
+            sysvinit:
+              cfn-hup:
+                enabled: true
+                ensure_running: true
+                files:
+                  - "/etc/cfn/cfn-hup.conf"
+                  - "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+              awslogsd:
+                enabled: true
+                ensure_running: true
+                files:
+                  - "/etc/awslogs/awslogs.conf"
     CreationPolicy:
       ResourceSignal:
         Timeout: PT5M
     Properties:
-      ImageId: ami-00068cd7555f543d5 # Amazon Linux 2 AMI
+      ImageId: ami-04590e7389a6e577c # Amazon Linux 2 AMI
       KeyName:
         Ref: KeyName
       InstanceType: t2.micro
+      IamInstanceProfile: !Ref LogRoleInstanceProfile
+      SecurityGroupIds:
+        - !GetAtt BearcatSecurityGroup.GroupId
       UserData:
-        Fn::Base64: fn::Sub | \#!/bin/bash -xe
-          yum update -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-init -s ${AWS::StackId} -r BearcatBucketSync --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
-          /opt/aws/bin/cfn-hup || error_exit 'Failed to start cfn-hup'
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource BearcatBucketSync --region ${AWS::Region}
+        Fn::Base64: !Sub | 
+           #!/bin/bash -xe
+           /opt/aws/bin/cfn-init -s ${AWS::StackId} -r BearcatBucketSync --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
+           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource BearcatBucketSync --region ${AWS::Region}
+      # BlockDeviceMappings:
+      #   - DeviceName: /dev/sdf
+      #     Ebs:
+      #       DeleteOnTermination: true
+      #       VolumeSize: 50
+      Tags:
+        -
+          Key: "org"
+          Value: "plz"
+        -
+          Key: "Application"
+          Value: "bearcat-sync"
 
 Outputs:
   InstanceId:
     Description: The instance ID of the bearcat bucket sync tool
-    Value:
-      Ref: "BearcatBucketSync"
+    Value: !Ref "BearcatBucketSync"

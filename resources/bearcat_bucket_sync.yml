@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources: 
+  BearcatBucketSyncRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+                # If you need to access this from the cli make sure that there
+                # is a trust relationship with your user profile here 
+                # AWS:
+                #   - "arn:aws:iam::<account-number>:user/<your-user>"
+            Action: 
+              - "sts:AssumeRole"
+            
+      Path: "/"
+  RolePolicies: 
+    Type: "AWS::IAM::Policy"
+    Properties: 
+      PolicyName: "bearcat"
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Action: s3:*
+            Resource: "*"
+          - Effect: "Allow"
+            Action: ec2:*
+            Resource: "*"
+      Roles: 
+        - Ref: "BearcatBucketSyncRole"
+          
+  BearcatInstanceProfile: 
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      Path: "/"
+      Roles: 
+        - Ref: "BearcatBucketSyncRole"
+          

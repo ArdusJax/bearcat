@@ -15,15 +15,16 @@ Application that should use locked down IAM users to securely sync AWS bucket co
 
 ```text
 USAGE:
-    bearcat [OPTIONS] <source> <destination> [--] [ARGS]
+    bearcat [OPTIONS] <source> <destination> <region_source> <region_destination> [--] [ARGS]
 
 ARGS:
-    <source>         Name of the AWS bucket to be sync'd from.
-    <destination>    Name of the AWS bucket to be sync'd to.
-    <region-from>    AWS region for the bucket that is being sync'd from.
-    <region-to>      AWS region for the bucket that is being sync'd to.
-    <profile>        Commercial AWS profile
-    <config>         location of the configuration file (defaults to ~/.bearcat)
+    <source>                Name of the AWS bucket to be sync'd from.
+    <destination>           Name of the AWS bucket to be sync'd to.
+    <region_source>         AWS region for the bucket that is being sync'd from.
+    <region_destination>    AWS region for the bucket that is being sync'd to.
+    <ssm_key>               SSM key that has credentials for syncing across accounts
+    <profile>               Commercial AWS profile
+    <config>                location of the configuration file (defaults to ~/.bearcat)
 
 FLAGS:
     -h, --help       Prints help information

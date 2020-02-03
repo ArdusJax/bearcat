@@ -1,0 +1,21 @@
+language: rust
+sudo: required
+os:
+- linux
+- osx
+rust:
+- stable
+services:
+- docker
+before_deploy: "./build-release bearcat ${TRAVIS_TAG}-${TRAVIS_OS_NAME}"
+deploy:
+  provider: releases
+  api_key:
+    secure: kpTMjv3ZWkZOFYhgzTGkPpal7BMXaxujUV5Ci6GXJHb/xiRE9GPHxBIxFuMN6cTln03O5c5g1f6UVtDx2dlxqHNNxLAgMOY0mjvQnYBCWo8UG41l/c7nV70FBn+Dn+Iy8P9dyKWXrXN/eIIZ23LG/9EeOHxG4m9DzK3JCrDrzyZ41O1Gau4ZAAFN9W1zlVU889E1cFs4UwPNVYMMCrLX2BZbHLJAtEdSHYsNRorwTnZatjm6SQotX97Wq0+PTG9PsaFDnNcNXtCK03xw3o0W+8TF1uM0iW1VJgxdRRl85b+gEaCAt9ZwsZ67YENDVzGm/4t/KHXQYCQ8yT3NqtCxjOJB7ypBRmq1Asd0haMZyUNMYCV5ojdhppA1VPp0EkNG+sPe2Pv5JgBWMecCxQp4qZVyFbTRe0XaSxnf6ss4de2EvbQLt20ACOIJRK8CMkZ6ud/YCJSnDOaRX6FKn3wB5lw1MAv0eqjtTEqZsBB6r4w0cQSk4a9lPQuvkYr3FesZhfkXq7ecAlLFT+uajZsRyWg7waBbLrXy5DB8qg+57s3EyTFrNOxNvLK1gTstivmjYma4/+QBXK9u+w/DgbllZHWhf4onuTMmtXc6ToBLIXKrOGABD/Y2gYvxQ8RCUyBQdh0oUXfbR9JWfEuxx/k0Spel3sJ0TnIWBDhAap4YpEA=
+  file_glob: true
+  file: "bearcat-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.*"
+  skip_cleanup: true
+  on:
+    repo: ArdusJax/bearcat
+    rust: stable
+    tags: true
